@@ -39,6 +39,10 @@ export async function requireActiveBusiness(user: User): Promise<{
   }
 
   const fallback = businesses[0];
+  if (!fallback) {
+    redirect('/dashboard/business/new');
+  }
+
   await setActiveBusinessId(fallback.id);
   return { businesses, activeBusiness: fallback };
 }
