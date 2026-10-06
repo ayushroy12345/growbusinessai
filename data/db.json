@@ -1,0 +1,388 @@
+{
+  "users": [
+    {
+      "id": "00000000-0000-4000-a000-000000000001",
+      "email": "owner@cafeempire.com",
+      "full_name": "Marcus Vance",
+      "phone": "+1 (555) 234-5678",
+      "role": "BUSINESS_OWNER",
+      "avatar_url": null,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-06T10:57:25.726Z"
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000002",
+      "email": "alex.customer@example.com",
+      "full_name": "Alex Smith",
+      "phone": "+1 (555) 888-9999",
+      "role": "CUSTOMER",
+      "avatar_url": null,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-06T10:57:11.970Z"
+    },
+    {
+      "id": "00000000-0000-4000-a000-000000000003",
+      "email": "admin@loyalty.com",
+      "full_name": "Platform Super Admin",
+      "phone": "+1 (555) 000-0000",
+      "role": "SUPER_ADMIN",
+      "avatar_url": null,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-06T10:56:53.494Z"
+    }
+  ],
+  "customer_profiles": [
+    {
+      "id": "10000000-0000-4000-a000-000000000001",
+      "user_id": "00000000-0000-4000-a000-000000000002",
+      "full_name": "Alex Smith",
+      "phone": "+1 (555) 888-9999",
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    }
+  ],
+  "businesses": [
+    {
+      "id": "20000000-0000-4000-a000-000000000001",
+      "owner_id": "00000000-0000-4000-a000-000000000001",
+      "slug": "artisan-coffee",
+      "name": "Artisan Coffee Roasters",
+      "category": "Specialty Cafe & Bakery",
+      "description": "Fresh artisanal roasts, handcrafted espresso, and freshly baked pastries daily.",
+      "logo_url": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=200&h=200&fit=crop&crop=faces",
+      "phone": "+1 (555) 123-4567",
+      "email": "hello@artisancoffee.com",
+      "address": "450 Hayes Street",
+      "city": "San Francisco",
+      "state": "CA",
+      "country": "United States",
+      "website_url": "https://artisancoffeeroasters.com",
+      "google_review_url": "https://g.page/r/artisan-coffee-sf/review",
+      "instagram_url": "https://instagram.com/artisancoffee",
+      "facebook_url": "https://facebook.com/artisancoffee",
+      "whatsapp_number": "+15551234567",
+      "whatsapp_channel_url": "https://whatsapp.com/channel/artisancoffee",
+      "youtube_url": "https://youtube.com/@artisancoffee",
+      "is_active": true,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    },
+    {
+      "id": "20000000-0000-4000-a000-000000000002",
+      "owner_id": "00000000-0000-4000-a000-000000000001",
+      "slug": "roy-fashion",
+      "name": "Roy Haute Fashion",
+      "category": "Designer Apparel & Boutique",
+      "description": "Curated luxury apparel, premium streetwear, and bespoke tailoring.",
+      "logo_url": "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=200&fit=crop&crop=faces",
+      "phone": "+1 (555) 987-6543",
+      "email": "concierge@royfashion.com",
+      "address": "720 5th Avenue",
+      "city": "New York",
+      "state": "NY",
+      "country": "United States",
+      "website_url": "https://royhautefashion.com",
+      "google_review_url": "https://g.page/r/roy-fashion-ny/review",
+      "instagram_url": "https://instagram.com/royhautefashion",
+      "facebook_url": null,
+      "whatsapp_number": "+15559876543",
+      "whatsapp_channel_url": null,
+      "youtube_url": null,
+      "is_active": true,
+      "created_at": "2026-10-04T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    }
+  ],
+  "business_staff": [],
+  "business_customers": [
+    {
+      "id": "60000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "first_visit_at": "2026-10-02T23:53:49.417Z",
+      "last_visit_at": "2026-10-04T23:53:49.417Z",
+      "total_visits": 5,
+      "total_spend": 32.5,
+      "current_points_balance": 5,
+      "status": "ACTIVE",
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-04T23:53:49.417Z"
+    }
+  ],
+  "loyalty_programs": [
+    {
+      "id": "30000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "program_name": "Artisan Perks Club",
+      "program_type": "VISIT_BASED",
+      "is_active": true,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    },
+    {
+      "id": "30000000-0000-4000-a000-000000000002",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "program_name": "Roy VIP Rewards",
+      "program_type": "VISIT_BASED",
+      "is_active": true,
+      "created_at": "2026-10-04T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    }
+  ],
+  "loyalty_rules": [
+    {
+      "id": "40000000-0000-4000-a000-000000000001",
+      "loyalty_program_id": "30000000-0000-4000-a000-000000000001",
+      "min_interval_hours": 2,
+      "points_per_visit": 1,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    },
+    {
+      "id": "40000000-0000-4000-a000-000000000002",
+      "loyalty_program_id": "30000000-0000-4000-a000-000000000002",
+      "min_interval_hours": 4,
+      "points_per_visit": 1,
+      "created_at": "2026-10-04T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    }
+  ],
+  "rewards": [
+    {
+      "id": "50000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "loyalty_program_id": "30000000-0000-4000-a000-000000000001",
+      "title": "Free Coffee or Welcome Treat",
+      "description": "Collect 5 visits and enjoy a complimentary hot or iced coffee of your choice.",
+      "reward_type": "FREE_ITEM",
+      "reward_value": "Free Coffee",
+      "required_visits": 5,
+      "expiry_days": 30,
+      "is_active": true,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    },
+    {
+      "id": "50000000-0000-4000-a000-000000000002",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "loyalty_program_id": "30000000-0000-4000-a000-000000000001",
+      "title": "20% Off Entire Order",
+      "description": "Reach 10 visits to unlock a 20% discount on food, beans, and drinks.",
+      "reward_type": "DISCOUNT",
+      "reward_value": "20% Off",
+      "required_visits": 10,
+      "expiry_days": 30,
+      "is_active": true,
+      "created_at": "2026-10-02T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    },
+    {
+      "id": "50000000-0000-4000-a000-000000000003",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "loyalty_program_id": "30000000-0000-4000-a000-000000000002",
+      "title": "Complimentary Canvas Tote Bag",
+      "description": "Visit 3 times to receive an exclusive limited-edition designer canvas tote bag.",
+      "reward_type": "GIFT",
+      "reward_value": "Canvas Tote",
+      "required_visits": 3,
+      "expiry_days": 45,
+      "is_active": true,
+      "created_at": "2026-10-04T23:53:49.417Z",
+      "updated_at": "2026-10-05T23:53:49.417Z"
+    }
+  ],
+  "reward_claims": [
+    {
+      "id": "80000000-0000-4000-a000-000000000001",
+      "claim_code": "RW-7K8A2P",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "reward_id": "50000000-0000-4000-a000-000000000001",
+      "status": "CLAIMED",
+      "claimed_at": "2026-10-04T23:53:49.417Z",
+      "expires_at": "2026-11-04T23:53:49.417Z",
+      "redeemed_at": null,
+      "redeemed_by_staff_id": null,
+      "created_at": "2026-10-04T23:53:49.417Z",
+      "updated_at": "2026-10-04T23:53:49.417Z"
+    }
+  ],
+  "visits": [
+    {
+      "id": "70000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "source": "QR_SCAN",
+      "purchase_amount": 5.5,
+      "verification_status": "VERIFIED",
+      "qr_code_id": null,
+      "metadata": {},
+      "created_at": "2026-10-02T23:53:49.417Z"
+    },
+    {
+      "id": "70000000-0000-4000-a000-000000000002",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "source": "QR_SCAN",
+      "purchase_amount": 6.25,
+      "verification_status": "VERIFIED",
+      "qr_code_id": null,
+      "metadata": {},
+      "created_at": "2026-10-03T23:53:49.417Z"
+    },
+    {
+      "id": "70000000-0000-4000-a000-000000000003",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "source": "QR_SCAN",
+      "purchase_amount": 7,
+      "verification_status": "VERIFIED",
+      "qr_code_id": null,
+      "metadata": {},
+      "created_at": "2026-10-04T11:53:49.417Z"
+    },
+    {
+      "id": "70000000-0000-4000-a000-000000000004",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "source": "QR_SCAN",
+      "purchase_amount": 5.75,
+      "verification_status": "VERIFIED",
+      "qr_code_id": null,
+      "metadata": {},
+      "created_at": "2026-10-04T19:53:49.417Z"
+    },
+    {
+      "id": "70000000-0000-4000-a000-000000000005",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "source": "QR_SCAN",
+      "purchase_amount": 8,
+      "verification_status": "VERIFIED",
+      "qr_code_id": null,
+      "metadata": {},
+      "created_at": "2026-10-04T23:53:49.417Z"
+    }
+  ],
+  "feedback": [
+    {
+      "id": "90000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "rating": 5,
+      "comment": "Best flat white in the neighborhood! The loyalty QR is so fast and convenient.",
+      "customer_name": "Alex Smith",
+      "customer_contact": "+1 (555) 888-9999",
+      "is_read": true,
+      "created_at": "2026-10-04T23:53:49.417Z"
+    }
+  ],
+  "social_links": [],
+  "qr_codes": [
+    {
+      "id": "d71cf7c3-d032-4889-ac1c-9cd36fb9fa12",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "code_identifier": "artisan-coffee",
+      "target_url": "/b/artisan-coffee",
+      "qr_type": "CHECKIN",
+      "scans_count": 5,
+      "last_scanned_at": "2026-10-04T23:53:49.417Z",
+      "created_at": "2026-10-02T23:53:49.417Z"
+    },
+    {
+      "id": "8ff1f87d-3c1a-4101-8d24-98aa31e4191e",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "code_identifier": "roy-fashion",
+      "target_url": "/b/roy-fashion",
+      "qr_type": "CHECKIN",
+      "scans_count": 0,
+      "last_scanned_at": null,
+      "created_at": "2026-10-04T23:53:49.417Z"
+    }
+  ],
+  "analytics_events": [
+    {
+      "id": "73625f61-6371-4b56-897d-8227d115669f",
+      "event_type": "business_created",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": null,
+      "metadata": {
+        "name": "Artisan Coffee Roasters"
+      },
+      "created_at": "2026-10-02T23:53:49.417Z"
+    },
+    {
+      "id": "7d5d1eb1-71b2-43df-95eb-ffe33fdb827b",
+      "event_type": "google_review_clicked",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "metadata": {},
+      "created_at": "2026-10-04T23:53:49.417Z"
+    },
+    {
+      "id": "f08bea87-28c5-4150-b376-087b15e068e3",
+      "event_type": "social_clicked",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "metadata": {
+        "platform": "instagram"
+      },
+      "created_at": "2026-10-04T23:53:49.417Z"
+    },
+    {
+      "id": "da3ed6c1-23c1-4d5a-b9df-d95d7b0eb7b6",
+      "event_type": "reward_claimed",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": "10000000-0000-4000-a000-000000000001",
+      "metadata": {
+        "claim_code": "RW-7K8A2P",
+        "reward_id": "50000000-0000-4000-a000-000000000001"
+      },
+      "created_at": "2026-10-04T23:53:49.417Z"
+    },
+    {
+      "id": "67eeff7c-c093-49e6-94a2-400844897511",
+      "event_type": "qr_opened",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "customer_id": null,
+      "metadata": {
+        "slug": "artisan-coffee"
+      },
+      "created_at": "2026-10-06T10:56:53.434Z"
+    }
+  ],
+  "audit_logs": [
+    {
+      "id": "812e2188-fb77-4ebe-aa87-97e79399218f",
+      "user_id": "00000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "action": "CREATE_BUSINESS",
+      "entity_type": "business",
+      "entity_id": "20000000-0000-4000-a000-000000000001",
+      "old_data": null,
+      "new_data": {
+        "name": "Artisan Coffee Roasters",
+        "slug": "artisan-coffee"
+      },
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-10-02T23:53:49.417Z"
+    },
+    {
+      "id": "9394f460-5aaf-48a7-b1cb-1b0f154cee0a",
+      "user_id": "00000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "action": "CREATE_BUSINESS",
+      "entity_type": "business",
+      "entity_id": "20000000-0000-4000-a000-000000000002",
+      "old_data": null,
+      "new_data": {
+        "name": "Roy Haute Fashion",
+        "slug": "roy-fashion"
+      },
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-10-04T23:53:49.417Z"
+    }
+  ]
+}
