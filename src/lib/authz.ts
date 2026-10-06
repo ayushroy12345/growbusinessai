@@ -24,20 +24,21 @@ export async function requireActiveBusiness(user: User): Promise<{
     redirect('/dashboard/business/new');
   }
 
-  let activeBusinessId = await getActiveBusinessId();
-  let activeBusiness =
+  const activeBusinessId = await getActiveBusinessId();
+  const resolved =
     businesses.find((b) => b.id === activeBusinessId) ||
     (activeBusinessId ? await getBusinessById(activeBusinessId) : null);
 
-  if (!activeBusiness || !canAccessBusiness(user, activeBusiness)) {
-    activeBusiness = businesses[0];
-    await setActiveBusinessId(activeBusiness.id);
-  } else if (!businesses.some((b) => b.id === activeBusiness.id) && user.role === 'SUPER_ADMIN') {
-    // Super admin inspecting a tenant via cookie; keep it.
-  } else if (!businesses.some((b) => b.id === activeBusiness.id)) {
-    activeBusiness = businesses[0];
-    await setActiveBusinessId(activeBusiness.id);
+  const ownsResolved = Boolean(resolved && businesses.some((b) => b.id === resolved.id));
+  const superAdminViewingTenant = Boolean(
+    resolved && user.role === 'SUPER_ADMIN' && canAccessBusiness(user, resolved)
+  );
+
+  if (resolved && (ownsResolved || superAdminViewingTenant) && canAccessBusiness(user, resolved)) {
+    return { businesses, activeBusiness: resolved };
   }
 
-  return { businesses, activeBusiness };
+  const fallback = businesses[0];
+  await setActiveBusinessId(fallback.id);
+  return { businesses, activeBusiness: fallback };
 }
