@@ -22,5 +22,5 @@ export function isSuperAdminEmail(email: string): boolean {
 }
 
 export function getAppOrigin(): string {
-  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
+  return (process.env.NEXT_PUBLIC_APP_URL || 'https://growbusinessai-jade.vercel.app').replace(/\/$/, '');
 }

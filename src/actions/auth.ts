@@ -30,7 +30,7 @@ export async function signInWithGoogleAction(redirectTo?: string) {
 
   try {
     const supabase = await createSupabaseServerClient();
-    const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://growbusinessai-jade.vercel.app';
     const callbackUrl = `${origin}/auth/callback?next=${encodeURIComponent(redirectTo || '/customer/dashboard')}`;
 
     const { data, error } = await supabase.auth.signInWithOAuth({

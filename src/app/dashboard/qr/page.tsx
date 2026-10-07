@@ -27,7 +27,7 @@ export default async function QRPage() {
     throw new Error('UNAUTHORIZED: Access to this business scope is forbidden.');
   }
 
-  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'https://growbusinessai-jade.vercel.app';
   const targetUrl = `${origin}/b/${activeBusiness.slug}`;
   const qrDataUrl = await generateQRCodeDataUrl(targetUrl, { width: 400, margin: 2 });
 
