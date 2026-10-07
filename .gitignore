@@ -17,6 +17,9 @@
 .DS_Store
 *.pem
 
+# Editor tool config
+/.cursor/
+
 # Local env files
 .env*.local
 

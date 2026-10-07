@@ -1,12 +1,7 @@
 import Link from 'next/link';
-import { requireAuth, getActiveBusinessId, setActiveBusinessId } from '@/lib/session';
-import {
-  getBusinessesByOwner,
-  getBusinessById,
-  getBusinessAnalytics,
-  getBusinessCustomersList,
-  getBusinessFeedback,
-} from '@/lib/db';
+import { requireAuth, getActiveBusinessId } from '@/lib/session';
+import { getBusinessesByOwner } from '@/lib/db';
+import { getOwnerDashboardData } from '@/lib/page-data';
 import {
   Users,
   TrendingUp,
@@ -22,6 +17,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { BusinessSwitcher } from '@/components/BusinessSwitcher';
+import { StampInbox } from '@/components/StampInbox';
 
 import { redirect } from 'next/navigation';
 
@@ -35,36 +31,31 @@ export default async function BusinessDashboardPage() {
   if (businesses.length === 0) {
     return (
       <div className="max-w-2xl mx-auto my-16 px-4 text-center space-y-6">
-        <div className="w-16 h-16 rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto shadow-sm">
+        <div className="w-16 h-16 rounded-3xl bg-lime text-ink flex items-center justify-center mx-auto">
           <Gift className="w-8 h-8" />
         </div>
-        <h1 className="text-3xl font-black text-slate-900">Welcome to Your Loyalty Hub</h1>
-        <p className="text-sm text-slate-600 max-w-md mx-auto">
-          You haven&apos;t created any businesses yet. Create your first business to launch your customer QR loyalty program!
+        <h1 className="font-display text-4xl text-ink">Your shop is one form away</h1>
+        <p className="text-sm text-ink/60 max-w-md mx-auto">
+          Add the name, the reward, and a Google review link. We will give you a QR to put on the counter.
         </p>
         <Link
           href="/dashboard/business/new"
-          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-indigo-600 text-white font-bold text-sm shadow-md hover:bg-indigo-700 transition"
+          className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-ink text-white font-semibold text-sm hover:bg-leaf transition"
         >
           <Plus className="w-4 h-4" />
-          Create First Business
+          Set up the shop
         </Link>
       </div>
     );
   }
 
-  let activeBusinessId = await getActiveBusinessId();
-  let activeBusiness = businesses.find((b) => b.id === activeBusinessId);
+  const activeBusinessId = await getActiveBusinessId();
+  const activeBusiness =
+    businesses.find((b) => b.id === activeBusinessId) || businesses[0];
 
-  if (!activeBusiness) {
-    activeBusiness = businesses[0];
-    await setActiveBusinessId(activeBusiness.id);
-  }
-
-  // Calculate actual analytics for this isolated business scope
-  const analytics = await getBusinessAnalytics(activeBusiness.id);
-  const recentCustomers = await getBusinessCustomersList(activeBusiness.id);
-  const recentFeedback = await getBusinessFeedback(activeBusiness.id);
+  // Single round trip: analytics, recent customers, feedback and the stamp inbox.
+  const { analytics, recentCustomers, recentFeedback, stampRequests } =
+    await getOwnerDashboardData(activeBusiness.id);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -109,6 +100,8 @@ export default async function BusinessDashboardPage() {
           </Link>
         </div>
       </div>
+
+      <StampInbox requests={stampRequests} />
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

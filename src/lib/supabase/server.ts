@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { withCallLog } from './call-log';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -7,7 +8,7 @@ export async function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
+  return withCallLog(createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -23,5 +24,5 @@ export async function createClient() {
         }
       },
     },
-  });
+  }), 'session');
 }

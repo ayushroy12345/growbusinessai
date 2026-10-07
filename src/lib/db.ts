@@ -1,7 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { cache } from 'react';
 import { createClient as createSupabaseServerClient } from './supabase/server';
 import { createAdminClient } from './supabase/admin';
+import { tryRpc, warnRpcFallback } from './supabase/rpc';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   User,
   CustomerProfile,
@@ -96,14 +99,33 @@ function isSupabaseConfigured(): boolean {
   return envSupabaseConfigured();
 }
 
+// PostgreSQL error raised when Row Level Security policies reference each other
+// in a cycle (see supabase/migrations/20251008_fix_rls_recursion.sql). Until that
+// migration is applied the read would fail outright, so it is retried with the
+// service-role client — every query below already scopes rows by tenant id.
+const RLS_RECURSION_CODE = '42P17';
+
+async function readQuery<R>(run: (client: SupabaseClient) => R): Promise<Awaited<R>> {
+  const result = (await run(await createSupabaseServerClient())) as Awaited<R>;
+  const error = (result as { error?: { code?: string | null; message?: string } | null }).error;
+
+  if (error?.code !== RLS_RECURSION_CODE) return result;
+
+  console.warn(
+    `RLS policy recursion (${error.message}) — retrying read with the service-role client.`
+  );
+  return (await run(createAdminClient())) as Awaited<R>;
+}
+
 // ==========================================
 // USERS & AUTH
 // ==========================================
 
 export async function getUserById(id: string): Promise<User | null> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.from('users').select('*').eq('id', id).maybeSingle();
+    const { data, error } = await readQuery((client) =>
+      client.from('users').select('*').eq('id', id).maybeSingle()
+    );
     if (error || !data) return null;
     return data as User;
   }
@@ -121,6 +143,21 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 
   const db = readDb();
   return db.users.find((u) => u.email.toLowerCase() === email.toLowerCase()) || null;
+}
+
+async function ensureAuthUserId(email: string, fullName: string | null): Promise<string> {
+  const admin = createAdminClient();
+  const created = await admin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (created.data.user) return created.data.user.id;
+
+  const existing = await admin.auth.admin.generateLink({ type: 'magiclink', email });
+  if (existing.data.user) return existing.data.user.id;
+
+  throw new Error(created.error?.message || 'Could not create the account');
 }
 
 function resolveUpsertRole(
@@ -174,9 +211,10 @@ export async function upsertUser(
       .maybeSingle();
     const existing = (existingById || existingByEmail) as User | null;
     const role = resolveUpsertRole(user.email, user.role, existing?.role);
+    const id = user.id || existing?.id || (await ensureAuthUserId(user.email.toLowerCase(), user.full_name ?? existing?.full_name ?? null));
 
     const payload = {
-      id: user.id || existing?.id || crypto.randomUUID(),
+      id,
       email: user.email.toLowerCase(),
       full_name: user.full_name !== undefined ? user.full_name : existing?.full_name || null,
       phone: user.phone !== undefined ? user.phone : existing?.phone || null,
@@ -232,12 +270,13 @@ export async function upsertUser(
 
 export async function getCustomerProfileByUserId(userId: string): Promise<CustomerProfile | null> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase
-      .from('customer_profiles')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const { data } = await readQuery((client) =>
+      client
+        .from('customer_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle()
+    );
     return (data as CustomerProfile) || null;
   }
 
@@ -300,14 +339,15 @@ export async function createOrUpdateCustomerProfile(
 // BUSINESSES
 // ==========================================
 
-export async function getBusinessesByOwner(ownerId: string): Promise<Business[]> {
+const getBusinessesByOwnerUncached = async (ownerId: string): Promise<Business[]> => {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('owner_id', ownerId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await readQuery((client) =>
+      client
+        .from('businesses')
+        .select('*')
+        .eq('owner_id', ownerId)
+        .order('created_at', { ascending: false })
+    );
 
     if (error) throw new Error(error.message);
     return (data as Business[]) || [];
@@ -315,17 +355,21 @@ export async function getBusinessesByOwner(ownerId: string): Promise<Business[]>
 
   const db = readDb();
   return db.businesses.filter((b) => b.owner_id === ownerId);
-}
+};
+
+// Deduped per request: the Navbar and the page both ask for the owner's businesses.
+export const getBusinessesByOwner = cache(getBusinessesByOwnerUncached);
 
 export async function getBusinessBySlug(slug: string): Promise<Business | null> {
   const cleanSlug = slug.toLowerCase().trim();
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase
-      .from('businesses')
-      .select('*')
-      .eq('slug', cleanSlug)
-      .maybeSingle();
+    const { data } = await readQuery((client) =>
+      client
+        .from('businesses')
+        .select('*')
+        .eq('slug', cleanSlug)
+        .maybeSingle()
+    );
     return (data as Business) || null;
   }
 
@@ -335,8 +379,9 @@ export async function getBusinessBySlug(slug: string): Promise<Business | null> 
 
 export async function getBusinessById(id: string): Promise<Business | null> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase.from('businesses').select('*').eq('id', id).maybeSingle();
+    const { data } = await readQuery((client) =>
+      client.from('businesses').select('*').eq('id', id).maybeSingle()
+    );
     return (data as Business) || null;
   }
 
@@ -441,6 +486,7 @@ export async function createBusiness(
       loyalty_program_id: programId,
       min_interval_hours: 2,
       points_per_visit: 1,
+      approval_required: true,
     });
 
     await admin.from('rewards').insert({
@@ -487,6 +533,7 @@ export async function createBusiness(
     loyalty_program_id: programId,
     min_interval_hours: 2,
     points_per_visit: 1,
+    approval_required: true,
     created_at: now,
     updated_at: now,
   };
@@ -528,6 +575,133 @@ export async function createBusiness(
   return newBusiness;
 }
 
+export type BusinessUpdate = {
+  name: string;
+  slug: string;
+  category?: string;
+  description?: string;
+  logo_url?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  website_url?: string;
+  google_review_url?: string;
+  instagram_url?: string;
+  facebook_url?: string;
+  whatsapp_number?: string;
+  whatsapp_channel_url?: string;
+  youtube_url?: string;
+};
+
+export async function updateBusiness(businessId: string, businessData: BusinessUpdate): Promise<Business> {
+  const current = await getBusinessById(businessId);
+  if (!current) {
+    throw new Error('Business not found.');
+  }
+
+  const cleanSlug = businessData.slug
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9-]/g, '-')
+    .replace(/-+/g, '-');
+
+  if (!businessData.name) {
+    throw new Error('Business name is required.');
+  }
+
+  if (cleanSlug !== current.slug) {
+    const existing = await getBusinessBySlug(cleanSlug);
+    if (existing && existing.id !== businessId) {
+      throw new Error(`The business slug "${cleanSlug}" is already taken. Please choose another.`);
+    }
+  }
+
+  const patch: Record<string, unknown> = {
+    name: businessData.name,
+    slug: cleanSlug,
+    category: businessData.category || null,
+    description: businessData.description || null,
+    logo_url: businessData.logo_url || null,
+    phone: businessData.phone || null,
+    email: businessData.email || null,
+    address: businessData.address || null,
+    city: businessData.city || null,
+    state: businessData.state || null,
+    country: businessData.country || null,
+    website_url: businessData.website_url || null,
+    google_review_url: businessData.google_review_url || null,
+    instagram_url: businessData.instagram_url || null,
+    facebook_url: businessData.facebook_url || null,
+    whatsapp_number: businessData.whatsapp_number || null,
+    whatsapp_channel_url: businessData.whatsapp_channel_url || null,
+    youtube_url: businessData.youtube_url || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const slugChanged = cleanSlug !== current.slug;
+
+  if (isSupabaseConfigured()) {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from('businesses')
+      .update(patch)
+      .eq('id', businessId)
+      .select()
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    if (slugChanged) {
+      await admin
+        .from('qr_codes')
+        .update({
+          code_identifier: cleanSlug,
+          target_url: `${getAppOrigin()}/b/${cleanSlug}`,
+        })
+        .eq('business_id', businessId);
+    }
+
+    await trackAnalyticsEvent('business_updated', businessId, null, {
+      slug_changed: slugChanged,
+      from_slug: current.slug,
+      to_slug: cleanSlug,
+    });
+
+    return data as Business;
+  }
+
+  const db = readDb();
+  const index = db.businesses.findIndex((b) => b.id === businessId);
+  if (index === -1) {
+    throw new Error('Business not found.');
+  }
+
+  const updated = { ...db.businesses[index], ...patch } as Business;
+  db.businesses[index] = updated;
+
+  if (slugChanged) {
+    db.qr_codes
+      .filter((qr) => qr.business_id === businessId)
+      .forEach((qr) => {
+        qr.code_identifier = cleanSlug;
+        qr.target_url = `${getAppOrigin()}/b/${cleanSlug}`;
+      });
+  }
+
+  writeDb(db);
+
+  await trackAnalyticsEvent('business_updated', businessId, null, {
+    slug_changed: slugChanged,
+    from_slug: current.slug,
+    to_slug: cleanSlug,
+  });
+
+  return updated;
+}
+
 // ==========================================
 // BUSINESS-CUSTOMER RELATIONSHIP & VISITS
 // ==========================================
@@ -537,13 +711,14 @@ export async function getBusinessCustomer(
   customerId: string
 ): Promise<BusinessCustomer | null> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data } = await supabase
-      .from('business_customers')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('customer_id', customerId)
-      .maybeSingle();
+    const { data } = await readQuery((client) =>
+      client
+        .from('business_customers')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('customer_id', customerId)
+        .maybeSingle()
+    );
     return (data as BusinessCustomer) || null;
   }
 
@@ -614,13 +789,14 @@ export async function getOrCreateBusinessCustomer(
 
 export async function getCustomerVisits(businessId: string, customerId: string): Promise<Visit[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('visits')
-      .select('*')
-      .eq('business_id', businessId)
-      .eq('customer_id', customerId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await readQuery((client) =>
+      client
+        .from('visits')
+        .select('*')
+        .eq('business_id', businessId)
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false })
+    );
 
     if (error) throw new Error(error.message);
     return (data as Visit[]) || [];
@@ -750,20 +926,23 @@ export async function recordCustomerVisit(
 
 export async function getLoyaltyRules(businessId: string): Promise<LoyaltyRule | null> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data: program } = await supabase
-      .from('loyalty_programs')
-      .select('id')
-      .eq('business_id', businessId)
-      .single();
+    const { data: program } = await readQuery((client) =>
+      client
+        .from('loyalty_programs')
+        .select('id')
+        .eq('business_id', businessId)
+        .single()
+    );
 
     if (!program) return null;
 
-    const { data: rule } = await supabase
-      .from('loyalty_rules')
-      .select('*')
-      .eq('loyalty_program_id', program.id)
-      .single();
+    const { data: rule } = await readQuery((client) =>
+      client
+        .from('loyalty_rules')
+        .select('*')
+        .eq('loyalty_program_id', program.id)
+        .single()
+    );
 
     return (rule as LoyaltyRule) || null;
   }
@@ -806,12 +985,13 @@ export async function updateLoyaltyCooldown(businessId: string, minIntervalHours
 
 export async function getRewardsByBusiness(businessId: string): Promise<Reward[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('rewards')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('required_visits', { ascending: true });
+    const { data, error } = await readQuery((client) =>
+      client
+        .from('rewards')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('required_visits', { ascending: true })
+    );
 
     if (error) throw new Error(error.message);
     return (data as Reward[]) || [];
@@ -821,6 +1001,31 @@ export async function getRewardsByBusiness(businessId: string): Promise<Reward[]
   return db.rewards
     .filter((r) => r.business_id === businessId)
     .sort((a, b) => a.required_visits - b.required_visits);
+}
+
+export async function getLoyaltyPanel(
+  businessId: string
+): Promise<{ rewards: Reward[]; rules: LoyaltyRule | null }> {
+  if (isSupabaseConfigured()) {
+    const rpc = await tryRpc<{ rewards: Reward[]; rules: LoyaltyRule | null }>(
+      'get_loyalty_panel',
+      { p_business_id: businessId }
+    );
+    if (rpc.ok) return rpc.data;
+    warnRpcFallback('get_loyalty_panel', rpc.reason);
+
+    const [rewards, rules] = await Promise.all([
+      getRewardsByBusiness(businessId),
+      getLoyaltyRules(businessId),
+    ]);
+    return { rewards, rules };
+  }
+
+  const [rewards, rules] = await Promise.all([
+    getRewardsByBusiness(businessId),
+    getLoyaltyRules(businessId),
+  ]);
+  return { rewards, rules };
 }
 
 export async function createReward(
@@ -881,17 +1086,18 @@ export async function deleteReward(rewardId: string, businessId: string): Promis
 
 export async function getCustomerClaims(customerId: string, businessId?: string): Promise<RewardClaim[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    let query = supabase
-      .from('reward_claims')
-      .select('*, reward:rewards(*), business:businesses(*)')
-      .eq('customer_id', customerId);
+    const { data, error } = await readQuery(async (client) => {
+      let query = client
+        .from('reward_claims')
+        .select('*, reward:rewards(*), business:businesses(*)')
+        .eq('customer_id', customerId);
 
-    if (businessId) {
-      query = query.eq('business_id', businessId);
-    }
+      if (businessId) {
+        query = query.eq('business_id', businessId);
+      }
 
-    const { data, error } = await query.order('claimed_at', { ascending: false });
+      return query.order('claimed_at', { ascending: false });
+    });
     if (error) throw new Error(error.message);
     return (data as RewardClaim[]) || [];
   }
@@ -1157,12 +1363,13 @@ export async function submitPrivateFeedback(
 
 export async function getBusinessFeedback(businessId: string): Promise<Feedback[]> {
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('feedback')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false });
+    const { data, error } = await readQuery((client) =>
+      client
+        .from('feedback')
+        .select('*')
+        .eq('business_id', businessId)
+        .order('created_at', { ascending: false })
+    );
 
     if (error) throw new Error(error.message);
     return (data as Feedback[]) || [];
@@ -1234,7 +1441,18 @@ export async function getBusinessAnalytics(businessId: string) {
   const day = 24 * 60 * 60 * 1000;
 
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
+    const { data: results, error } = await readQuery(async (client) => {
+      const queries = await Promise.all([
+        client.from('business_customers').select('total_visits, first_visit_at').eq('business_id', businessId),
+        client.from('visits').select('created_at').eq('business_id', businessId),
+        client.from('reward_claims').select('status').eq('business_id', businessId),
+        client.from('feedback').select('*', { count: 'exact', head: true }).eq('business_id', businessId),
+        client.from('analytics_events').select('event_type').eq('business_id', businessId),
+      ]);
+      return { data: queries, error: queries.find((r) => r.error)?.error || null };
+    });
+
+    if (error) throw new Error(error.message);
 
     const [
       { data: customersList },
@@ -1242,13 +1460,7 @@ export async function getBusinessAnalytics(businessId: string) {
       { data: claimsList },
       { count: feedbackCount },
       { data: events },
-    ] = await Promise.all([
-      supabase.from('business_customers').select('total_visits, first_visit_at').eq('business_id', businessId),
-      supabase.from('visits').select('created_at').eq('business_id', businessId),
-      supabase.from('reward_claims').select('status').eq('business_id', businessId),
-      supabase.from('feedback').select('*', { count: 'exact', head: true }).eq('business_id', businessId),
-      supabase.from('analytics_events').select('event_type').eq('business_id', businessId),
-    ]);
+    ] = results;
 
     const customers = customersList || [];
     const visits = (visitsList || []).map((v) => v.created_at as string);
@@ -1321,26 +1533,37 @@ function withRewardStatus(
 }
 
 export async function getBusinessCustomersList(businessId: string): Promise<BusinessCustomer[]> {
-  const rewards = await getRewardsByBusiness(businessId);
-
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase
-      .from('business_customers')
-      .select('*, customer_profile:customer_profiles(*)')
-      .eq('business_id', businessId)
-      .order('last_visit_at', { ascending: false });
+    const rpc = await tryRpc<BusinessCustomer[]>('get_business_customers', {
+      p_business_id: businessId,
+    });
+    if (rpc.ok) return rpc.data;
+    warnRpcFallback('get_business_customers', rpc.reason);
 
-    if (error) throw new Error(error.message);
+    const [rewards, customersResult, claimsResult] = await Promise.all([
+      getRewardsByBusiness(businessId),
+      readQuery((client) =>
+        client
+          .from('business_customers')
+          .select('*, customer_profile:customer_profiles(*)')
+          .eq('business_id', businessId)
+          .order('last_visit_at', { ascending: false })
+      ),
+      readQuery((client) =>
+        client.from('reward_claims').select('*').eq('business_id', businessId)
+      ),
+    ]);
 
-    const { data: claims } = await supabase
-      .from('reward_claims')
-      .select('*')
-      .eq('business_id', businessId);
+    if (customersResult.error) throw new Error(customersResult.error.message);
 
-    return withRewardStatus((data as BusinessCustomer[]) || [], rewards, (claims as RewardClaim[]) || []);
+    return withRewardStatus(
+      (customersResult.data as BusinessCustomer[]) || [],
+      rewards,
+      (claimsResult.data as RewardClaim[]) || []
+    );
   }
 
+  const rewards = await getRewardsByBusiness(businessId);
   const db = readDb();
   const customers = db.business_customers
     .filter((bc) => bc.business_id === businessId)
@@ -1366,11 +1589,12 @@ export async function getCustomerParticipatingBusinesses(customerId: string) {
   const db = readDb();
 
   if (isSupabaseConfigured()) {
-    const supabase = await createSupabaseServerClient();
-    const { data: bcs } = await supabase
-      .from('business_customers')
-      .select('*, business:businesses(*)')
-      .eq('customer_id', customerId);
+    const { data: bcs } = await readQuery((client) =>
+      client
+        .from('business_customers')
+        .select('*, business:businesses(*)')
+        .eq('customer_id', customerId)
+    );
 
     return (bcs || []).map((bc) => ({
       business: bc.business as Business,

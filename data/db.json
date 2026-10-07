@@ -8,7 +8,7 @@
       "role": "BUSINESS_OWNER",
       "avatar_url": null,
       "created_at": "2026-10-02T23:53:49.417Z",
-      "updated_at": "2026-10-06T10:57:25.726Z"
+      "updated_at": "2026-10-06T12:10:51.281Z"
     },
     {
       "id": "00000000-0000-4000-a000-000000000002",
@@ -18,7 +18,7 @@
       "role": "CUSTOMER",
       "avatar_url": null,
       "created_at": "2026-10-02T23:53:49.417Z",
-      "updated_at": "2026-10-06T11:06:35.165Z"
+      "updated_at": "2026-10-06T12:17:24.031Z"
     },
     {
       "id": "00000000-0000-4000-a000-000000000003",
@@ -28,7 +28,7 @@
       "role": "SUPER_ADMIN",
       "avatar_url": null,
       "created_at": "2026-10-02T23:53:49.417Z",
-      "updated_at": "2026-10-06T10:56:53.494Z"
+      "updated_at": "2026-10-06T12:17:55.878Z"
     }
   ],
   "customer_profiles": [
@@ -90,7 +90,7 @@
       "youtube_url": null,
       "is_active": true,
       "created_at": "2026-10-04T23:53:49.417Z",
-      "updated_at": "2026-10-05T23:53:49.417Z"
+      "updated_at": "2026-10-06T12:18:36.017Z"
     }
   ],
   "business_staff": [],
@@ -133,10 +133,10 @@
     {
       "id": "40000000-0000-4000-a000-000000000001",
       "loyalty_program_id": "30000000-0000-4000-a000-000000000001",
-      "min_interval_hours": 2,
+      "min_interval_hours": 26,
       "points_per_visit": 1,
       "created_at": "2026-10-02T23:53:49.417Z",
-      "updated_at": "2026-10-05T23:53:49.417Z"
+      "updated_at": "2026-10-06T12:16:50.142Z"
     },
     {
       "id": "40000000-0000-4000-a000-000000000002",
@@ -383,6 +383,51 @@
       "ip_address": null,
       "user_agent": null,
       "created_at": "2026-10-04T23:53:49.417Z"
+    },
+    {
+      "id": "0a4f84c6-e804-4b06-a5ba-de7003790409",
+      "user_id": "00000000-0000-4000-a000-000000000001",
+      "business_id": "20000000-0000-4000-a000-000000000001",
+      "action": "UPDATE_COOLDOWN",
+      "entity_type": "loyalty_rule",
+      "entity_id": null,
+      "old_data": null,
+      "new_data": {
+        "min_interval_hours": 26
+      },
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-10-06T12:16:50.150Z"
+    },
+    {
+      "id": "2e5e1efd-af28-487c-b223-5f8a6f6379d8",
+      "user_id": "00000000-0000-4000-a000-000000000003",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "action": "SUSPEND_BUSINESS",
+      "entity_type": "business",
+      "entity_id": "20000000-0000-4000-a000-000000000002",
+      "old_data": null,
+      "new_data": {
+        "is_active": false
+      },
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-10-06T12:18:20.159Z"
+    },
+    {
+      "id": "922934be-66ec-484f-8ac8-03c96e97bdda",
+      "user_id": "00000000-0000-4000-a000-000000000003",
+      "business_id": "20000000-0000-4000-a000-000000000002",
+      "action": "ACTIVATE_BUSINESS",
+      "entity_type": "business",
+      "entity_id": "20000000-0000-4000-a000-000000000002",
+      "old_data": null,
+      "new_data": {
+        "is_active": true
+      },
+      "ip_address": null,
+      "user_agent": null,
+      "created_at": "2026-10-06T12:18:36.018Z"
     }
   ]
 }

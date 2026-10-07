@@ -1,27 +1,37 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { cache } from 'react';
 import { createClient as createSupabaseServerClient } from './supabase/server';
 import { getUserById, getUserByEmail, upsertUser } from './db';
+import { isSupabaseConfigured } from './env';
 import { User, UserRole } from '@/types';
 
 const DEMO_USER_COOKIE = 'loyalty_session_user';
 const ACTIVE_BUSINESS_COOKIE = 'loyalty_active_business_id';
 
 function isSupabaseLive(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return Boolean(
-    url &&
-    key &&
-    !url.includes('placeholder') &&
-    !key.includes('placeholder')
-  );
+  return isSupabaseConfigured();
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export const getCurrentUser = cache(async function getCurrentUser(): Promise<User | null> {
   const cookieStore = await cookies();
 
-  // 1. Try Supabase Auth session only if live Supabase project is configured
+  // 1. Fast path: local session cookie written at email login. Reading it avoids
+  // two ~250-400ms Supabase Auth round trips on every page render.
+  const sessionUserCookie = cookieStore.get(DEMO_USER_COOKIE)?.value;
+  if (sessionUserCookie) {
+    try {
+      const parsed = JSON.parse(sessionUserCookie);
+      if (parsed?.id) {
+        const found = await getUserById(parsed.id);
+        if (found) return found;
+      }
+    } catch {
+      // Ignore JSON parse error and fall through to Supabase Auth
+    }
+  }
+
+  // 2. Supabase Auth session (Google OAuth users have no local cookie)
   if (isSupabaseLive()) {
     try {
       const supabase = await createSupabaseServerClient();
@@ -44,22 +54,8 @@ export async function getCurrentUser(): Promise<User | null> {
     }
   }
 
-  // 2. Read session cookie
-  const sessionUserCookie = cookieStore.get(DEMO_USER_COOKIE)?.value;
-  if (sessionUserCookie) {
-    try {
-      const parsed = JSON.parse(sessionUserCookie);
-      if (parsed?.id) {
-        const found = await getUserById(parsed.id);
-        if (found) return found;
-      }
-    } catch {
-      // Ignore JSON parse error
-    }
-  }
-
   return null;
-}
+});
 
 export async function setSessionUser(user: User): Promise<void> {
   const cookieStore = await cookies();

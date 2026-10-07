@@ -1,0 +1,3 @@
+-- Development-only seed. Do not apply this file to production.
+-- Requires an existing owner row in public.users before insert.
+-- The application does not depend on this data to start.

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { upsertUser, getCustomerProfileByUserId, getBusinessesByOwner } from '@/lib/db';
+import { establishEmailSession } from '@/lib/supabase/email-session';
+import { isSupabaseConfigured } from '@/lib/env';
 import { UserRole } from '@/types';
 
 export async function POST(request: Request) {
@@ -7,7 +9,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     const email = body.email?.trim().toLowerCase();
     const fullName = body.full_name?.trim();
-    const role: UserRole = body.role || 'CUSTOMER';
+    const requestedRole: UserRole = body.role === 'BUSINESS_OWNER' ? 'BUSINESS_OWNER' : 'CUSTOMER';
+    const role = requestedRole;
     const redirectTo = body.redirectTo || '';
 
     if (!email) {
@@ -20,15 +23,16 @@ export async function POST(request: Request) {
       role,
     });
 
+    if (isSupabaseConfigured()) {
+      await establishEmailSession(user);
+    }
+
     let redirectUrl = redirectTo;
-    if (!redirectUrl) {
-      if (role === 'BUSINESS_OWNER') {
-        redirectUrl = '/dashboard';
-      } else if (role === 'SUPER_ADMIN') {
-        redirectUrl = '/admin';
-      } else {
-        redirectUrl = '/customer/dashboard';
-      }
+    if (role === 'BUSINESS_OWNER') {
+      const businesses = await getBusinessesByOwner(user.id);
+      redirectUrl = businesses.length === 0 ? '/dashboard/business/new' : redirectTo || '/dashboard';
+    } else if (!redirectUrl) {
+      redirectUrl = '/customer/dashboard';
     }
 
     // If customer, check if customer profile exists
@@ -54,7 +58,6 @@ export async function POST(request: Request) {
       path: '/',
     });
 
-    // If owner, set their first business as active if they have one
     if (role === 'BUSINESS_OWNER') {
       const businesses = await getBusinessesByOwner(user.id);
       if (businesses.length > 0) {

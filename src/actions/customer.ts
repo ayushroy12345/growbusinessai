@@ -4,15 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { requireAuth, getCurrentUser } from '@/lib/session';
 import {
   getCustomerProfileByUserId,
-  getBusinessBySlug,
-  getBusinessById,
-  recordCustomerVisit,
   claimReward,
   submitPrivateFeedback,
   trackSocialClick,
-  getRewardsByBusiness,
-  getOrCreateBusinessCustomer,
 } from '@/lib/db';
+import { requestStamp } from '@/lib/engagement';
 
 export async function checkInCustomerVisitAction(businessId: string) {
   const user = await requireAuth();
@@ -22,9 +18,10 @@ export async function checkInCustomerVisitAction(businessId: string) {
     throw new Error('Customer profile not completed yet.');
   }
 
-  const result = await recordCustomerVisit(businessId, profile.id, 'QR_SCAN');
+  const result = await requestStamp(businessId, profile.id);
   revalidatePath(`/b/[businessSlug]`, 'page');
   revalidatePath('/customer/dashboard');
+  revalidatePath('/dashboard');
   return result;
 }
 

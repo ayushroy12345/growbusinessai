@@ -10,6 +10,7 @@ import {
 } from '@/lib/session';
 import {
   createBusiness,
+  updateBusiness,
   getBusinessesByOwner,
   getBusinessById,
   createReward,
@@ -80,6 +81,86 @@ export async function createBusinessAction(formData: FormData) {
 
   revalidatePath('/', 'layout');
   redirect('/dashboard');
+}
+
+export async function updateBusinessAction(formData: FormData) {
+  const user = await requireAuth();
+  const businessId =
+    (formData.get('business_id') as string) || (await getActiveBusinessId()) || '';
+
+  if (!businessId) {
+    throw new Error('No active business selected.');
+  }
+
+  const business = await getBusinessById(businessId);
+  if (!business || (business.owner_id !== user.id && user.role !== 'SUPER_ADMIN')) {
+    throw new Error('UNAUTHORIZED: You cannot edit this business.');
+  }
+
+  const name = (formData.get('name') as string)?.trim();
+  const slug = (formData.get('slug') as string)?.trim();
+  const category = (formData.get('category') as string)?.trim();
+  const description = (formData.get('description') as string)?.trim();
+  const logo_url = (formData.get('logo_url') as string)?.trim();
+  const phone = (formData.get('phone') as string)?.trim();
+  const email = (formData.get('email') as string)?.trim();
+  const address = (formData.get('address') as string)?.trim();
+  const city = (formData.get('city') as string)?.trim();
+  const state = (formData.get('state') as string)?.trim();
+  const country = (formData.get('country') as string)?.trim();
+  const website_url = (formData.get('website_url') as string)?.trim();
+  const google_review_url = (formData.get('google_review_url') as string)?.trim();
+  const instagram_url = (formData.get('instagram_url') as string)?.trim();
+  const facebook_url = (formData.get('facebook_url') as string)?.trim();
+  const whatsapp_number = (formData.get('whatsapp_number') as string)?.trim();
+  const whatsapp_channel_url = (formData.get('whatsapp_channel_url') as string)?.trim();
+  const youtube_url = (formData.get('youtube_url') as string)?.trim();
+
+  if (!name || !slug) {
+    redirect(
+      `/dashboard/settings?error=${encodeURIComponent('Business name and URL slug are required.')}`
+    );
+  }
+
+  const updated = await updateBusiness(businessId, {
+    name,
+    slug,
+    category,
+    description,
+    logo_url,
+    phone,
+    email,
+    address,
+    city,
+    state,
+    country,
+    website_url,
+    google_review_url,
+    instagram_url,
+    facebook_url,
+    whatsapp_number,
+    whatsapp_channel_url,
+    youtube_url,
+  }).catch((err: unknown) => {
+    redirect(
+      `/dashboard/settings?error=${encodeURIComponent(
+        err instanceof Error ? err.message : 'Could not save your business details.'
+      )}`
+    );
+  });
+
+  await recordAuditLog(
+    user.id,
+    businessId,
+    'UPDATE_BUSINESS',
+    'business',
+    businessId,
+    { name: business.name, slug: business.slug },
+    { name: updated.name, slug: updated.slug }
+  );
+
+  revalidatePath('/', 'layout');
+  redirect('/dashboard/settings?saved=1');
 }
 
 export async function switchBusinessAction(businessId: string) {

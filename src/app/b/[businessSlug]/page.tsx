@@ -1,14 +1,8 @@
 import { notFound } from 'next/navigation';
+import { after } from 'next/server';
 import { getCurrentUser } from '@/lib/session';
-import {
-  getBusinessBySlug,
-  getCustomerProfileByUserId,
-  getBusinessCustomer,
-  getRewardsByBusiness,
-  getCustomerClaims,
-  getLoyaltyRules,
-  trackAnalyticsEvent,
-} from '@/lib/db';
+import { trackAnalyticsEvent } from '@/lib/db';
+import { getBusinessPageData } from '@/lib/page-data';
 import { BusinessClientView } from './BusinessClientView';
 
 interface BusinessPageProps {
@@ -19,30 +13,25 @@ interface BusinessPageProps {
 
 export default async function BusinessPublicPage({ params }: BusinessPageProps) {
   const { businessSlug } = await params;
-  const business = await getBusinessBySlug(businessSlug);
+  const user = await getCurrentUser();
+  const data = await getBusinessPageData(businessSlug, user?.id ?? null);
 
-  if (!business || !business.is_active) {
+  if (!data || !data.business.is_active) {
     notFound();
   }
 
-  const user = await getCurrentUser();
-  const customerProfile = user ? await getCustomerProfileByUserId(user.id) : null;
+  const { business, customer_profile: customerProfile, business_customer, rewards, claims, rules, stamp_request: stampRequest, menu, scratch } = data;
 
-  let businessCustomer = null;
-  let claims: any[] = [];
-  let visits: any[] = [];
+  const visits: any[] = [];
+  const customerId = customerProfile?.id || null;
 
-  if (customerProfile) {
-    businessCustomer = await getBusinessCustomer(business.id, customerProfile.id);
-    claims = await getCustomerClaims(customerProfile.id, business.id);
-  }
-
-  const rewards = await getRewardsByBusiness(business.id);
-  const rules = await getLoyaltyRules(business.id);
-
-  // Track QR / landing page opened event
-  await trackAnalyticsEvent('qr_opened', business.id, customerProfile?.id || null, {
-    slug: businessSlug,
+  // Fire-and-forget: analytics inserts should not delay the first byte.
+  after(async () => {
+    await trackAnalyticsEvent('qr_opened', business.id, customerId, { slug: businessSlug });
+    await trackAnalyticsEvent('business_page_viewed', business.id, customerId, { slug: businessSlug });
+    if (menu.items.length > 0) {
+      await trackAnalyticsEvent('menu_viewed', business.id, customerId, { items: menu.items.length });
+    }
   });
 
   return (
@@ -50,11 +39,14 @@ export default async function BusinessPublicPage({ params }: BusinessPageProps) 
       <BusinessClientView
         business={business}
         customerProfile={customerProfile}
-        businessCustomer={businessCustomer}
+        businessCustomer={business_customer}
         rewards={rewards}
         claims={claims}
         visits={visits}
         minIntervalHours={rules?.min_interval_hours ?? 2}
+        stampRequest={stampRequest}
+        menu={menu}
+        scratch={scratch}
       />
     </div>
   );

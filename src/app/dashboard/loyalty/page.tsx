@@ -1,10 +1,5 @@
 import { requireAuth, getActiveBusinessId } from '@/lib/session';
-import {
-  getBusinessesByOwner,
-  getBusinessById,
-  getRewardsByBusiness,
-  getLoyaltyRules,
-} from '@/lib/db';
+import { getBusinessesByOwner, getBusinessById, getLoyaltyPanel } from '@/lib/db';
 import { LoyaltyClientView } from './LoyaltyClientView';
 import { Gift } from 'lucide-react';
 import Link from 'next/link';
@@ -31,8 +26,7 @@ export default async function LoyaltyPage() {
     throw new Error('UNAUTHORIZED: Access to this business scope is forbidden.');
   }
 
-  const rewards = await getRewardsByBusiness(activeBusiness.id);
-  const rules = await getLoyaltyRules(activeBusiness.id);
+  const { rewards, rules } = await getLoyaltyPanel(activeBusiness.id);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

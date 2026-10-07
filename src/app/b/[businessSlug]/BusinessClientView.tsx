@@ -9,6 +9,12 @@ import {
   Reward,
   RewardClaim,
   Visit,
+  MenuCategory,
+  MenuItem,
+  ScratchCampaign,
+  ScratchPlay,
+  ScratchPrize,
+  StampRequest,
 } from '@/types';
 import {
   checkInCustomerVisitAction,
@@ -38,6 +44,7 @@ import {
   WhatsAppIcon,
 } from '@/components/SocialIcons';
 import Link from 'next/link';
+import { ScratchPanel } from '@/components/ScratchPanel';
 
 interface BusinessClientViewProps {
   business: Business;
@@ -47,6 +54,9 @@ interface BusinessClientViewProps {
   claims: RewardClaim[];
   visits: Visit[];
   minIntervalHours: number;
+  stampRequest?: StampRequest | null;
+  menu?: { categories: MenuCategory[]; items: MenuItem[] };
+  scratch?: { campaign: ScratchCampaign; prizes: ScratchPrize[]; plays: ScratchPlay[] } | null;
 }
 
 export function BusinessClientView({
@@ -57,6 +67,9 @@ export function BusinessClientView({
   claims,
   visits,
   minIntervalHours,
+  stampRequest = null,
+  menu = { categories: [], items: [] },
+  scratch = null,
 }: BusinessClientViewProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -196,11 +209,15 @@ export function BusinessClientView({
           {/* Check-in CTA Button */}
           <button
             onClick={handleCheckIn}
-            disabled={isPending}
+            disabled={isPending || stampRequest?.status === 'PENDING'}
             className="w-full py-3.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-100 flex items-center justify-center gap-2 transition disabled:opacity-50"
           >
             <QrCode className="w-5 h-5" />
-            {isPending ? 'Verifying Visit...' : 'Record Visit / Check In Now'}
+            {isPending
+              ? 'Sending request...'
+              : stampRequest?.status === 'PENDING'
+              ? 'Stamp request pending approval'
+              : 'Request a stamp'}
           </button>
 
           {checkInMessage && (
@@ -482,6 +499,43 @@ export function BusinessClientView({
           </form>
         )}
       </div>
+
+      {menu.items.length > 0 && (
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <h2 className="text-base font-bold text-slate-900">Menu</h2>
+          {menu.categories.map((category) => {
+            const items = menu.items.filter((item) => item.category_id === category.id);
+            if (!items.length) return null;
+            return (
+              <div key={category.id} className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">{category.name}</h3>
+                {items.map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+                    <div>
+                      <div className="font-semibold text-slate-900">{item.name}</div>
+                      {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+                    </div>
+                    <div className="font-semibold text-slate-700">₹{(item.price_cents / 100).toFixed(0)}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+          {menu.items.filter((item) => !item.category_id).map((item) => (
+            <div key={item.id} className="flex items-start justify-between gap-3 text-sm">
+              <div className="font-semibold text-slate-900">{item.name}</div>
+              <div className="font-semibold text-slate-700">₹{(item.price_cents / 100).toFixed(0)}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {scratch && customerProfile && (
+        <ScratchPanel
+          campaign={scratch.campaign}
+          plays={scratch.plays}
+        />
+      )}
 
       {/* Customer's Recent Visits at this Business */}
       {customerProfile && visits.length > 0 && (

@@ -1,11 +1,6 @@
 import Link from 'next/link';
 import { requireAuth } from '@/lib/session';
-import {
-  getCustomerProfileByUserId,
-  getCustomerParticipatingBusinesses,
-  getCustomerClaims,
-  getRewardsByBusiness,
-} from '@/lib/db';
+import { getCustomerDashboardData } from '@/lib/page-data';
 import {
   Sparkles,
   Gift,
@@ -21,7 +16,8 @@ import { computeRewardStatus } from '@/lib/loyalty';
 
 export default async function CustomerDashboardPage() {
   const user = await requireAuth('/customer/dashboard');
-  const profile = await getCustomerProfileByUserId(user.id);
+  const { profile, participating, claims, rewardsByBusiness } =
+    await getCustomerDashboardData(user.id);
 
   if (!profile) {
     return (
@@ -40,8 +36,15 @@ export default async function CustomerDashboardPage() {
     );
   }
 
-  const participating = await getCustomerParticipatingBusinesses(profile.id);
-  const claims = await getCustomerClaims(profile.id);
+  const stores = participating.map((item) => {
+    const rewards = rewardsByBusiness.get(item.business.id) || [];
+    return {
+      item,
+      nextReward:
+        rewards.find((r) => r.required_visits > item.totalVisits) ||
+        rewards[rewards.length - 1],
+    };
+  });
 
   // Active claims pending redemption
   const activeClaims = claims.filter((c) => c.status === 'CLAIMED');
@@ -152,10 +155,7 @@ export default async function CustomerDashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {participating.map(async (item) => {
-              const rewards = await getRewardsByBusiness(item.business.id);
-              const nextReward = rewards.find((r) => r.required_visits > item.totalVisits) || rewards[rewards.length - 1];
-
+            {stores.map(({ item, nextReward }) => {
               return (
                 <div
                   key={item.business.id}

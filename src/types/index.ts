@@ -84,6 +84,89 @@ export interface LoyaltyRule {
   loyalty_program_id: string;
   min_interval_hours: number;
   points_per_visit: number;
+  approval_required?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type StampRequestStatus = 'PENDING' | 'APPROVED' | 'DECLINED';
+
+export interface StampRequest {
+  id: string;
+  business_id: string;
+  customer_id: string;
+  status: StampRequestStatus;
+  requested_at: string;
+  decided_at: string | null;
+  decided_by: string | null;
+  decline_reason: string | null;
+  customer_profile?: CustomerProfile;
+}
+
+export interface StampEvent {
+  id: string;
+  business_id: string;
+  customer_id: string;
+  stamp_request_id: string | null;
+  created_at: string;
+}
+
+export interface ScratchCampaign {
+  id: string;
+  business_id: string;
+  name: string;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  attempts_per_customer: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ScratchPrize {
+  id: string;
+  campaign_id: string;
+  business_id: string;
+  title: string;
+  description: string | null;
+  reward_type: string;
+  reward_value: string | null;
+  probability: number;
+  max_redemptions: number | null;
+  awarded_count: number;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface ScratchPlay {
+  id: string;
+  campaign_id: string;
+  business_id: string;
+  customer_id: string;
+  prize_id: string | null;
+  outcome_title: string;
+  created_at: string;
+}
+
+export interface MenuCategory {
+  id: string;
+  business_id: string;
+  name: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  business_id: string;
+  category_id: string | null;
+  name: string;
+  description: string | null;
+  price_cents: number;
+  image_url: string | null;
+  is_available: boolean;
+  is_featured: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
 }

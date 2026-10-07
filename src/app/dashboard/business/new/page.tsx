@@ -18,20 +18,20 @@ export default async function NewBusinessPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
       <div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 text-xs font-semibold mb-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-lime text-ink text-xs font-semibold mb-2">
           <Building2 className="w-3.5 h-3.5" />
-          <span>Multi-Tenant Business Provisioning</span>
+          <span>Your shop</span>
         </div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Create a New Business</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Configure your business profile, loyalty rules, and generate your printable customer QR standee.
+        <h1 className="font-display text-4xl text-ink tracking-tight">Set up the counter card</h1>
+        <p className="text-sm text-ink/60 mt-1">
+          Customers will see this name when they scan. You get a QR to print when you save.
         </p>
       </div>
 
       <form action={createBusinessAction} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-8">
         {/* Core Identity */}
         <div className="space-y-4">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-indigo-600">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-leaf">
             1. Core Business Details
           </h2>
 
@@ -45,7 +45,7 @@ export default async function NewBusinessPage() {
                 name="name"
                 required
                 placeholder="e.g. Blue Bottle Coffee"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -62,7 +62,7 @@ export default async function NewBusinessPage() {
                   name="slug"
                   required
                   placeholder="blue-bottle"
-                  className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-r-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono"
+                  className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-r-xl focus:ring-2 focus:ring-leaf focus:outline-none font-mono"
                 />
               </div>
             </div>
@@ -77,7 +77,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="category"
                 placeholder="e.g. Cafe & Bakery, Hair Salon, Retail"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -89,7 +89,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="logo_url"
                 placeholder="https://images.unsplash.com/..."
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
           </div>
@@ -102,14 +102,14 @@ export default async function NewBusinessPage() {
               name="description"
               rows={2}
               placeholder="Artisanal specialty coffee & handcrafted pastries roasted fresh daily."
-              className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
             />
           </div>
         </div>
 
         {/* Contact & Location */}
         <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-indigo-600">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-leaf">
             2. Contact & Address
           </h2>
 
@@ -120,7 +120,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="phone"
                 placeholder="+1 (555) 234-5678"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -130,7 +130,7 @@ export default async function NewBusinessPage() {
                 type="email"
                 name="email"
                 placeholder="contact@business.com"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="address"
                 placeholder="100 Market St, Suite 400"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
             <div>
@@ -151,7 +151,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="city"
                 placeholder="San Francisco"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
             <div>
@@ -160,7 +160,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="state"
                 placeholder="CA"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
           </div>
@@ -168,7 +168,7 @@ export default async function NewBusinessPage() {
 
         {/* Reputation & Social Channels */}
         <div className="space-y-4 pt-4 border-t border-slate-100">
-          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-indigo-600">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-leaf">
             3. Google Review & Social Channels
           </h2>
 
@@ -181,7 +181,7 @@ export default async function NewBusinessPage() {
               type="url"
               name="google_review_url"
               placeholder="https://g.page/r/your-google-review-link/review"
-              className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
             />
             <p className="mt-1 text-[11px] text-slate-400">
               Customers can click a neutral button to leave you a 5-star review on Google.
@@ -195,7 +195,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="website_url"
                 placeholder="https://yourwebsite.com"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -205,7 +205,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="instagram_url"
                 placeholder="https://instagram.com/yourhandle"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -215,7 +215,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="facebook_url"
                 placeholder="https://facebook.com/yourpage"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -225,7 +225,7 @@ export default async function NewBusinessPage() {
                 type="text"
                 name="whatsapp_number"
                 placeholder="+15551234567"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -235,7 +235,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="whatsapp_channel_url"
                 placeholder="https://whatsapp.com/channel/..."
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
 
@@ -245,7 +245,7 @@ export default async function NewBusinessPage() {
                 type="url"
                 name="youtube_url"
                 placeholder="https://youtube.com/@yourchannel"
-                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                className="w-full text-sm px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-leaf focus:outline-none"
               />
             </div>
           </div>
@@ -253,9 +253,9 @@ export default async function NewBusinessPage() {
 
         <button
           type="submit"
-          className="w-full py-4 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-100 transition flex items-center justify-center gap-2"
+          className="w-full py-4 rounded-full bg-ink hover:bg-leaf text-white font-semibold text-sm transition flex items-center justify-center gap-2"
         >
-          Create Business & Generate QR Code
+          Save shop and get the QR
           <ArrowRight className="w-4 h-4" />
         </button>
       </form>

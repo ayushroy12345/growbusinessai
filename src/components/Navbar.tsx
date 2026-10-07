@@ -55,6 +55,15 @@ export async function Navbar() {
                     <Link href="/dashboard/qr" className={navLink}>
                       QR
                     </Link>
+                    <Link href="/dashboard/menu" className={navLink}>
+                      Menu
+                    </Link>
+                    <Link href="/dashboard/scratch" className={navLink}>
+                      Scratch
+                    </Link>
+                    <Link href="/dashboard/settings" className={navLink}>
+                      Settings
+                    </Link>
                   </>
                 )}
 
@@ -101,16 +110,16 @@ export async function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link
-                href="/auth/login"
+                href="/auth/login?intent=business"
                 className="px-4 py-2 text-sm font-medium text-ink/80 hover:text-ink rounded-full transition"
               >
                 Sign in
               </Link>
               <Link
-                href="/auth/login"
+                href="/auth/login?intent=business"
                 className="px-4 py-2 text-sm font-semibold text-ink bg-lime hover:bg-[#c8ea55] rounded-full transition"
               >
-                Open the app
+                Start your shop
               </Link>
             </div>
           )}

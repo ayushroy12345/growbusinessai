@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { createClient as createSupabaseServerClient } from '@/lib/supabase/server';
+import { establishEmailSession } from '@/lib/supabase/email-session';
+import { isSupabaseConfigured } from '@/lib/env';
 import {
   getCurrentUser,
   setSessionUser,
@@ -23,7 +25,7 @@ import { UserRole } from '@/types';
 export async function signInWithGoogleAction(redirectTo?: string) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   if (url.includes('placeholder') || !url) {
-    redirect(`/auth/login?error=${encodeURIComponent('Live Google OAuth requires valid Supabase credentials in .env.local. Click any of the one-click testing personas below to test instantly!')}`);
+    redirect(`/auth/login?error=${encodeURIComponent('Google sign-in needs a configured Supabase project.')}`);
   }
 
   try {
@@ -51,9 +53,7 @@ export async function signInWithGoogleAction(redirectTo?: string) {
   }
 }
 
-/**
- * Quick Persona Login / Switcher (Supports testing all acceptance criteria seamlessly)
- */
+/** Email sign-in for a business owner or a customer. */
 export async function loginWithEmailAction(formData: FormData) {
   const email = (formData.get('email') as string)?.trim().toLowerCase();
   const fullName = (formData.get('full_name') as string)?.trim();
@@ -69,6 +69,10 @@ export async function loginWithEmailAction(formData: FormData) {
     full_name: fullName || email.split('@')[0],
     role,
   });
+
+  if (isSupabaseConfigured()) {
+    await establishEmailSession(user);
+  }
 
   await setSessionUser(user);
 

@@ -89,7 +89,24 @@ SUPER_ADMIN_EMAILS=admin@loyalty.com
 ```
 
 ### 2. Apply Database Schema
-Execute the SQL script in `supabase/migrations/20250101_init.sql` inside your Supabase SQL Editor.
+In the Supabase SQL Editor, run the migrations in order:
+
+1. `supabase/migrations/20250101_init.sql`
+2. `supabase/migrations/20251007_engagement.sql`
+
+Or, with the Supabase CLI linked to the project:
+
+```bash
+supabase db push
+```
+
+`20251007_engagement.sql` adds stamp approval, scratch cards, the menu, review settings, row level security, and transactional database functions. The service role key stays on the server. Google sign-in uses `/api/auth/google` after the Google provider is enabled in Supabase Auth.
+
+Development seed data is optional and is not required in production:
+
+```bash
+node scripts/seed-demo.mjs
+```
 
 ### 3. Start the Development Server
 ```bash
