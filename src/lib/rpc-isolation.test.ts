@@ -38,6 +38,7 @@ interface Fixture {
   businessA: { id: string; slug: string };
   businessB: { id: string; slug: string };
   customerBProfileId: string;
+  customerAProfileId: string;
 }
 
 async function loginWith(anon: SupabaseClient, admin: SupabaseClient, email: string): Promise<string> {
@@ -83,65 +84,108 @@ test(
     const guest = createClient(url, anonKey, { auth: { persistSession: false } });
 
     // Skip the suite if the migration has not been applied yet (function 404s).
-    const probe = await guest.rpc('get_business_page', { p_slug: 'artisan-coffee' });
+    const probe = await guest.rpc('get_business_page', { p_slug: '__migration_probe__' });
     if (probe.error && probe.error.code === 'PGRST202') {
       t.skip('run supabase/migrations/20251010_page_read_rpcs.sql first');
       return;
     }
 
-    const suffix = randomUUID().slice(0, 8);
-    const ownerBEmail = `rpc-owner-${suffix}@example.com`;
-    const customerBEmail = `rpc-customer-${suffix}@example.com`;
-    const businessA = { id: '35761743-fc45-4e53-a5f8-a621b13b7dfb', slug: 'artisan-coffee' };
+    const createdBusinessIds: string[] = [];
+    const createdUserIds: string[] = [];
+    const createdAuthIds: string[] = [];
 
-    const ownerBUser = await admin.auth.admin.createUser({ email: ownerBEmail, email_confirm: true });
-    if (ownerBUser.error) throw new Error(`create ownerB: ${ownerBUser.error.message}`);
-    const ownerBUserId = ownerBUser.data.user.id;
+    async function createFixtureUser(
+      email: string,
+      fullName: string,
+      role: 'BUSINESS_OWNER' | 'CUSTOMER'
+    ): Promise<string> {
+      const created = await admin.auth.admin.createUser({ email, email_confirm: true });
+      if (created.error) throw new Error(`create auth user ${email}: ${created.error.message}`);
+      const userId = created.data.user.id;
+      createdAuthIds.push(userId);
 
-    const { error: ownerBRowErr } = await admin
-      .from('users')
-      .insert({ id: ownerBUserId, email: ownerBEmail, full_name: 'RPC Owner B', role: 'BUSINESS_OWNER' });
-    if (ownerBRowErr) throw new Error(`insert ownerB users row: ${ownerBRowErr.message}`);
+      const { error: rowErr } = await admin
+        .from('users')
+        .insert({ id: userId, email, full_name: fullName, role });
+      if (rowErr) throw new Error(`insert users row ${email}: ${rowErr.message}`);
+      createdUserIds.push(userId);
+      return userId;
+    }
 
-    const businessB = {
-      id: randomUUID(),
-      slug: `rpc-test-b2-${suffix}`,
-      name: `RPC Test Business B ${suffix}`,
-      owner_id: ownerBUserId,
-      is_active: true,
-    };
-    const { error: bizErr } = await admin.from('businesses').insert(businessB);
-    if (bizErr) throw new Error(`insert businessB: ${bizErr.message}`);
+    try {
+      const suffix = randomUUID().slice(0, 8);
+      const ownerAEmail = `rpc-ownera-${suffix}@example.com`;
+      const ownerBEmail = `rpc-owner-${suffix}@example.com`;
+      const customerAEmail = `rpc-customera-${suffix}@example.com`;
+      const customerBEmail = `rpc-customer-${suffix}@example.com`;
 
-    const customerBUser = await admin.auth.admin.createUser({ email: customerBEmail, email_confirm: true });
-    if (customerBUser.error) throw new Error(`create customerB: ${customerBUser.error.message}`);
-    const customerBUserId = customerBUser.data.user.id;
+      const ownerAUserId = await createFixtureUser(ownerAEmail, 'RPC Owner A', 'BUSINESS_OWNER');
+      const ownerBUserId = await createFixtureUser(ownerBEmail, 'RPC Owner B', 'BUSINESS_OWNER');
+      const customerAUserId = await createFixtureUser(customerAEmail, 'RPC Customer A', 'CUSTOMER');
+      const customerBUserId = await createFixtureUser(customerBEmail, 'RPC Customer B', 'CUSTOMER');
 
-    const { error: customerBRowErr } = await admin
-      .from('users')
-      .insert({ id: customerBUserId, email: customerBEmail, full_name: 'RPC Customer B', role: 'CUSTOMER' });
-    if (customerBRowErr) throw new Error(`insert customerB users row: ${customerBRowErr.message}`);
+      const businessA = {
+        id: randomUUID(),
+        slug: `rpc-store-a-${suffix}`,
+        name: `RPC Store A ${suffix}`,
+        owner_id: ownerAUserId,
+        is_active: true,
+      };
+      const { error: bizAErr } = await admin.from('businesses').insert(businessA);
+      if (bizAErr) throw new Error(`insert businessA: ${bizAErr.message}`);
+      createdBusinessIds.push(businessA.id);
 
-    const { data: customerBProfile, error: profileErr } = await admin
-      .from('customer_profiles')
-      .insert({ user_id: customerBUserId, full_name: 'RPC Customer B', phone: '+910000000000' })
-      .select()
-      .single();
-    if (profileErr) throw new Error(`insert customerB profile: ${profileErr.message}`);
+      const businessB = {
+        id: randomUUID(),
+        slug: `rpc-store-b-${suffix}`,
+        name: `RPC Store B ${suffix}`,
+        owner_id: ownerBUserId,
+        is_active: true,
+      };
+      const { error: bizBErr } = await admin.from('businesses').insert(businessB);
+      if (bizBErr) throw new Error(`insert businessB: ${bizBErr.message}`);
+      createdBusinessIds.push(businessB.id);
 
-    const fixture: Fixture = {
-      admin,
-      anon,
-      ownerAToken: await loginWith(anon, admin, 'asha.shop@example.com'),
-      customerAToken: await loginWith(anon, admin, 'priya.customer@example.com'),
-      ownerBToken: await loginWith(anon, admin, ownerBEmail),
-      customerBToken: await loginWith(anon, admin, customerBEmail),
-      ownerBUserId,
-      customerBUserId,
-      businessA,
-      businessB: { id: businessB.id, slug: businessB.slug },
-      customerBProfileId: customerBProfile.id,
-    };
+      const { data: customerAProfile, error: profileAErr } = await admin
+        .from('customer_profiles')
+        .insert({ user_id: customerAUserId, full_name: 'RPC Customer A', phone: '+919000000001' })
+        .select()
+        .single();
+      if (profileAErr) throw new Error(`insert customerA profile: ${profileAErr.message}`);
+
+      const { data: customerBProfile, error: profileBErr } = await admin
+        .from('customer_profiles')
+        .insert({ user_id: customerBUserId, full_name: 'RPC Customer B', phone: '+919000000002' })
+        .select()
+        .single();
+      if (profileBErr) throw new Error(`insert customerB profile: ${profileBErr.message}`);
+
+      const { error: relErr } = await admin
+        .from('business_customers')
+        .insert({
+          business_id: businessA.id,
+          customer_id: customerAProfile.id,
+          total_visits: 2,
+          total_spend: 0,
+          current_points_balance: 2,
+          status: 'ACTIVE',
+        });
+      if (relErr) throw new Error(`link customerA to businessA: ${relErr.message}`);
+
+      const fixture: Fixture = {
+        admin,
+        anon,
+        ownerAToken: await loginWith(anon, admin, ownerAEmail),
+        customerAToken: await loginWith(anon, admin, customerAEmail),
+        ownerBToken: await loginWith(anon, admin, ownerBEmail),
+        customerBToken: await loginWith(anon, admin, customerBEmail),
+        ownerBUserId,
+        customerBUserId,
+        businessA,
+        businessB: { id: businessB.id, slug: businessB.slug },
+        customerBProfileId: customerBProfile.id,
+        customerAProfileId: customerAProfile.id,
+      };
 
     const ownerA = authedClient(url, anonKey, fixture.ownerAToken);
     const ownerB = authedClient(url, anonKey, fixture.ownerBToken);
@@ -180,7 +224,7 @@ test(
     await t.test('customer A sees only their own profile and participation', async () => {
       const { data, error } = await customerA.rpc('get_customer_dashboard');
       assert.equal(error, null);
-      assert.ok(data?.profile?.id === '6ed54a61-75a5-4a1e-9add-f8a2a7173e85');
+      assert.ok(data?.profile?.id === fixture.customerAProfileId);
       assert.ok(Array.isArray(data.stores));
       const store = data.stores.find((s: { business: { id: string } }) => s.business.id === fixture.businessA.id);
       assert.ok(store, 'customer A participates in business A');
@@ -250,9 +294,20 @@ test(
       assert.ok(listErr, 'anon customer list should fail');
     });
 
-    // Cleanup (auth user delete cascades public.users -> businesses/profiles).
-    for (const uid of [fixture.ownerBUserId, fixture.customerBUserId]) {
-      await admin.auth.admin.deleteUser(uid);
+    // Cleanup even when a subtest fails so the suite never leaves orphan fixtures behind.
+    } finally {
+      for (const id of createdBusinessIds) {
+        try { await admin.from('businesses').delete().eq('id', id); } catch {}
+      }
+      for (const id of createdUserIds) {
+        try { await admin.from('users').delete().eq('id', id); } catch {}
+      }
+      for (const id of createdAuthIds) {
+        try { await admin.auth.admin.deleteUser(id); } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          console.warn('cleanup:', message);
+        }
+      }
     }
   }
 );

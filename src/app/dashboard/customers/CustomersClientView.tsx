@@ -2,11 +2,65 @@
 
 import { useState } from 'react';
 import { BusinessCustomer } from '@/types';
-import { Search, Filter, Users, Calendar, Phone } from 'lucide-react';
+import { Search, Filter, Download } from 'lucide-react';
 
 interface CustomersClientViewProps {
   customers: BusinessCustomer[];
   businessName: string;
+}
+
+function formatDate(value: string) {
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
+
+function exportRowsToCsv(rows: BusinessCustomer[], businessName: string) {
+  const headers = [
+    'Name',
+    'Phone',
+    'Total Visits',
+    'Total Spend',
+    'Points Balance',
+    'First Visit',
+    'Last Visit',
+    'Status',
+  ];
+
+  const escape = (value: unknown): string => {
+    const s = value === null || value === undefined ? '' : String(value);
+    return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const lines = [headers.map(escape).join(',')];
+  for (const bc of rows) {
+    lines.push(
+      [
+        bc.customer_profile?.full_name || 'Anonymous Customer',
+        bc.customer_profile?.phone || '',
+        bc.total_visits,
+        bc.total_spend || 0,
+        bc.current_points_balance || 0,
+        formatDate(bc.first_visit_at),
+        formatDate(bc.last_visit_at),
+        bc.status,
+      ]
+        .map(escape)
+        .join(',')
+    );
+  }
+
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const safeName = businessName.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '') || 'business';
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${safeName}_customers_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export function CustomersClientView({ customers, businessName }: CustomersClientViewProps) {
@@ -53,7 +107,21 @@ export function CustomersClientView({ customers, businessName }: CustomersClient
             <option value="NEW">New Customers (1 visit)</option>
           </select>
         </div>
+
+        <button
+          type="button"
+          onClick={() => exportRowsToCsv(filtered, businessName)}
+          disabled={filtered.length === 0}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          Download CSV ({filtered.length})
+        </button>
       </div>
+
+      <p className="text-[11px] text-slate-400 -mt-3">
+        Exports the currently filtered customers as a CSV file that opens in Excel and Google Sheets.
+      </p>
 
       {/* Customer Table */}
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
