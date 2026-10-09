@@ -103,6 +103,50 @@ export async function signOutAction() {
   redirect('/');
 }
 
+/** Set or update the password for the signed-in account (owners and customers). */
+export async function updatePasswordAction(formData: FormData) {
+  const user = await requireAuth();
+  const redirectTo = (formData.get('redirect_to') as string) || '/dashboard/settings';
+  const currentPassword = (formData.get('current_password') as string) || '';
+  const newPassword = (formData.get('new_password') as string) || '';
+  const confirmPassword = (formData.get('confirm_password') as string) || '';
+
+  const errorTo = (message: string) =>
+    redirect(`${redirectTo}?error=${encodeURIComponent(message)}`);
+  const ok = () => redirect(`${redirectTo}?saved=1`);
+
+  if (newPassword.length < 8) {
+    errorTo('Password must be at least 8 characters.');
+  }
+  if (newPassword !== confirmPassword) {
+    errorTo('New passwords do not match.');
+  }
+
+  if (!isSupabaseConfigured()) {
+    errorTo('Supabase is not configured on this deployment.');
+  }
+
+  const supabase = await createSupabaseServerClient();
+
+  if (currentPassword) {
+    const { error: verifyErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+    if (verifyErr) {
+      errorTo('Current password is incorrect.');
+    }
+  }
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) {
+    errorTo(error.message);
+  }
+
+  revalidatePath('/', 'layout');
+  ok();
+}
+
 export async function completeCustomerProfileAction(formData: FormData) {
   const user = await requireAuth();
   const fullName = (formData.get('full_name') as string)?.trim();

@@ -4,6 +4,7 @@ import { getBusinessesByOwner } from '@/lib/db';
 import { BusinessSwitcher } from './BusinessSwitcher';
 import { signOutAction } from '@/actions/auth';
 import { Logo } from './Logo';
+import { AnonymousNav } from './AnonymousNav';
 import { Gift, LogOut, ShieldAlert } from 'lucide-react';
 
 function formatRole(role: string) {
@@ -108,20 +109,7 @@ export async function Navbar() {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/auth/login?intent=business"
-                className="px-4 py-2 text-sm font-medium text-ink/80 hover:text-ink rounded-full transition"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/auth/login?intent=business"
-                className="px-4 py-2 text-sm font-semibold text-ink bg-lime hover:bg-[#c8ea55] rounded-full transition"
-              >
-                Start your shop
-              </Link>
-            </div>
+            <AnonymousNav />
           )}
         </div>
       </div>

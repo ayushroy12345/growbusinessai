@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createAdminClient } from './supabase/admin';
-import { isSupabaseConfigured } from './env';
+import { isSupabaseConfigured, assertLocalStorageAllowed } from './env';
 import {
   getLoyaltyRules,
   getOrCreateBusinessCustomer,
@@ -35,6 +35,7 @@ type Store = {
 };
 
 function readStore(): Store {
+  assertLocalStorageAllowed();
   const raw = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) as Store;
   raw.stamp_requests ||= [];
   raw.stamp_events ||= [];
@@ -48,6 +49,7 @@ function readStore(): Store {
 }
 
 function writeStore(store: Store) {
+  assertLocalStorageAllowed();
   fs.writeFileSync(DB_FILE, JSON.stringify(store, null, 2));
 }
 

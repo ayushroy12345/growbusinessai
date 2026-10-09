@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { updateBusinessAction } from '@/actions/business';
+import { updatePasswordAction } from '@/actions/auth';
 import { requireAuth, getActiveBusinessId } from '@/lib/session';
 import { getBusinessesByOwner, getBusinessById } from '@/lib/db';
 import { getAppOrigin } from '@/lib/env';
@@ -13,6 +14,7 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertCircle,
+  Lock,
 } from 'lucide-react';
 
 interface SettingsPageProps {
@@ -104,7 +106,7 @@ export default async function BusinessSettingsPage({ searchParams }: SettingsPag
       {saved && (
         <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-800">
           <CheckCircle2 className="w-4 h-4 shrink-0" />
-          Business details saved.
+          Settings saved.
         </div>
       )}
 
@@ -360,6 +362,65 @@ export default async function BusinessSettingsPage({ searchParams }: SettingsPag
             </a>
           </p>
         </div>
+      </form>
+
+      <form
+        action={updatePasswordAction}
+        className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6"
+      >
+        <input type="hidden" name="redirect_to" value="/dashboard/settings" />
+
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-leaf inline-flex items-center gap-1.5">
+            <Lock className="w-4 h-4" />
+            Account password
+          </h2>
+          <p className="text-xs text-slate-500">
+            Password sign-in works alongside Google and email links. Leave the current password blank if you
+            signed up with Google or a link and don't have a password yet.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Field label="Current password (if you have one)">
+              <input
+                type="password"
+                name="current_password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="New password *">
+              <input
+                type="password"
+                name="new_password"
+                required
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="Confirm new password *">
+              <input
+                type="password"
+                name="confirm_password"
+                required
+                autoComplete="new-password"
+                placeholder="Repeat password"
+                className={inputClass}
+              />
+            </Field>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full py-4 rounded-full bg-ink hover:bg-leaf text-white font-semibold text-sm transition"
+        >
+          Update password
+        </button>
       </form>
     </div>
   );

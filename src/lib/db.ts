@@ -24,7 +24,7 @@ import {
   UserRole,
 } from '@/types';
 import { validateVisitEligibility, generateClaimCode, computeRewardStatus } from './loyalty';
-import { isSuperAdminEmail, isSupabaseConfigured as envSupabaseConfigured, getAppOrigin } from './env';
+import { isSuperAdminEmail, isSupabaseConfigured as envSupabaseConfigured, assertLocalStorageAllowed, getAppOrigin } from './env';
 
 // Persistent Local Database file fallback for zero-downtime offline dev & automated tests
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -49,6 +49,8 @@ interface LocalDatabase {
 }
 
 function initLocalDb(): LocalDatabase {
+  assertLocalStorageAllowed();
+
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
@@ -89,6 +91,7 @@ function readDb(): LocalDatabase {
 }
 
 function writeDb(data: LocalDatabase): void {
+  assertLocalStorageAllowed();
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }

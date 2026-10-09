@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { requireAuth } from '@/lib/session';
 import { getCustomerDashboardData } from '@/lib/page-data';
+import { updatePasswordAction } from '@/actions/auth';
 import {
   Sparkles,
   Gift,
@@ -11,10 +12,16 @@ import {
   Phone,
   CheckCircle2,
   ExternalLink,
+  Lock,
+  AlertCircle,
 } from 'lucide-react';
 import { computeRewardStatus } from '@/lib/loyalty';
 
-export default async function CustomerDashboardPage() {
+interface CustomerDashboardProps {
+  searchParams: Promise<{ saved?: string; error?: string }>;
+}
+
+export default async function CustomerDashboardPage({ searchParams }: CustomerDashboardProps) {
   const user = await requireAuth('/customer/dashboard');
   const { profile, participating, claims, rewardsByBusiness } =
     await getCustomerDashboardData(user.id);
@@ -50,6 +57,10 @@ export default async function CustomerDashboardPage() {
   const activeClaims = claims.filter((c) => c.status === 'CLAIMED');
   // Past redeemed claims
   const redeemedClaims = claims.filter((c) => c.status === 'REDEEMED');
+
+  const params = await searchParams;
+  const pwError = params.error || null;
+  const pwSaved = params.saved === '1';
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
@@ -257,6 +268,64 @@ export default async function CustomerDashboardPage() {
           </div>
         </div>
       )}
+    {/* Account Security */}
+      <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Lock className="w-4 h-4 text-indigo-600" />
+            Account password
+          </h2>
+        </div>
+        <p className="text-xs text-slate-500">
+          Password sign-in works alongside Google and email links. Leave the current password blank if you signed
+          up with Google or a link and don't have a password yet.
+        </p>
+
+        {pwSaved && (
+          <div className="p-3 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200">
+            ✓ Password updated.
+          </div>
+        )}
+        {pwError && (
+          <div className="flex items-center gap-2 p-3 bg-rose-50 text-rose-800 text-xs font-semibold rounded-xl border border-rose-200">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {pwError}
+          </div>
+        )}
+
+        <form action={updatePasswordAction} className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <input type="hidden" name="redirect_to" value="/customer/dashboard" />
+          <input
+            type="password"
+            name="current_password"
+            autoComplete="current-password"
+            placeholder="Current password (optional)"
+            className="w-full text-xs px-3.5 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="password"
+            name="new_password"
+            required
+            autoComplete="new-password"
+            placeholder="New password (8+ chars)"
+            className="w-full text-xs px-3.5 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <input
+            type="password"
+            name="confirm_password"
+            required
+            autoComplete="new-password"
+            placeholder="Repeat new password"
+            className="w-full text-xs px-3.5 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+          <button
+            type="submit"
+            className="sm:col-span-3 w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs transition"
+          >
+            Update password
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

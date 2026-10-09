@@ -15,6 +15,8 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
   const isBusiness = intent === 'business';
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [mode, setMode] = useState<'password' | 'link'>('password');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(errorMessage || null);
 
@@ -23,6 +25,10 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email.trim() || !fullName.trim()) return;
+    if (mode === 'password' && password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -33,6 +39,8 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
         body: JSON.stringify({
           email: email.trim(),
           full_name: fullName.trim(),
+          password: mode === 'password' ? password : '',
+          mode,
           role: isBusiness ? 'BUSINESS_OWNER' : 'CUSTOMER',
           redirectTo: isBusiness ? '' : redirectTo,
         }),
@@ -143,6 +151,33 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
                 className="mt-1 w-full text-sm px-3.5 py-3 border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-leaf"
               />
             </label>
+
+            {mode === 'password' ? (
+              <label className="block">
+                <span className="text-xs font-semibold text-ink/70">
+                  Password {isBusiness ? '(create &amp; confirm — at least 8 characters)' : '(at least 8 characters)'}
+                </span>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="mt-1 w-full text-sm px-3.5 py-3 border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-leaf"
+                />
+                <span className="mt-1 block text-[11px] text-ink/45">
+                  {isBusiness
+                    ? 'New shop owners: this password becomes the login for your account. Returning owners: enter the password you set.'
+                    : 'First time here? This password creates your account. Returning? Sign in with the password you set.'}
+                </span>
+              </label>
+            ) : (
+              <p className="text-[11px] text-ink/45 rounded-2xl bg-white border border-sand px-3.5 py-3">
+                You'll continue instantly with just your email — no password needed. Existing members can set a
+                password later in their settings.
+              </p>
+            )}
+
             <button
               type="submit"
               disabled={loading || !email.trim() || !fullName.trim()}
@@ -150,6 +185,16 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
               {isBusiness ? 'Create my shop' : 'Open my card'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMode(mode === 'password' ? 'link' : 'password')}
+              className="w-full text-xs font-semibold text-leaf hover:underline"
+            >
+              {mode === 'password'
+                ? "Forgot your password? Use a sign-in link instead"
+                : 'Sign in with a password instead'}
             </button>
           </form>
 
