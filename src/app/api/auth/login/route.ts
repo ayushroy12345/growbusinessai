@@ -12,11 +12,8 @@ function loginError(message: string, status = 400) {
   return NextResponse.json({ success: false, error: message }, { status });
 }
 
-async function finishLogin(
-  user: User,
-  role: UserRole,
-  redirectTo: string
-): Promise<NextResponse> {
+async function finishLogin(user: User, redirectTo: string): Promise<NextResponse> {
+  const role = user.role;
   let redirectUrl = redirectTo;
   if (role === 'BUSINESS_OWNER') {
     const businesses = await getBusinessesByOwner(user.id);
@@ -73,6 +70,7 @@ export async function POST(request: Request) {
     const fullName = body.full_name?.trim();
     const password = typeof body.password === 'string' ? body.password : '';
     const mode: Mode = body.mode === 'password' ? 'password' : 'link';
+    const authMode: 'signin' | 'signup' = body.authMode === 'signup' ? 'signup' : 'signin';
     const requestedRole: UserRole = body.role === 'BUSINESS_OWNER' ? 'BUSINESS_OWNER' : 'CUSTOMER';
     const role = requestedRole;
     const redirectTo = body.redirectTo || '';
@@ -94,7 +92,7 @@ export async function POST(request: Request) {
       if (signIn.error) {
         existing = Boolean(await getUserByEmail(email));
 
-        if (!existing) {
+        if (!existing && authMode === 'signup') {
           // New account: provision a confirmed auth account with this password.
           const admin = createAdminClient();
           const created = await admin.auth.admin.createUser({
@@ -113,20 +111,42 @@ export async function POST(request: Request) {
       }
 
       if (signIn.error) {
-        const hint = existing
-          ? ' If your account was created without a password, use the sign-in link option below, then set a password in your settings.'
-          : '';
-        return loginError(`Incorrect email or password.${hint}`, 401);
+        if (!existing && authMode === 'signin') {
+          return loginError(
+            `No account found for ${email}. Create an account to get started.`,
+            404
+          );
+        }
+        if (existing && authMode === 'signup') {
+          return loginError(
+            `An account already exists for ${email}. Sign in instead, or continue with Google.`,
+            409
+          );
+        }
+        return loginError(
+          'Incorrect email or password. If your account was created without a password, use the sign-in link option, then set a password in your settings.',
+          401
+        );
+      }
+
+      if (authMode === 'signup') {
+        const existingForSignup = Boolean(await getUserByEmail(email));
+        if (existingForSignup) {
+          return loginError(
+            `An account already exists for ${email}. Sign in instead, or continue with Google.`,
+            409
+          );
+        }
       }
 
       const user = await upsertUser({ email, full_name: fullName, role });
-      return finishLogin(user, role, redirectTo);
+      return finishLogin(user, redirectTo);
     }
 
     // Link mode: passwordless session (magic link verified server-side, no email sent).
     const user = await upsertUser({ email, full_name: fullName, role });
     await establishEmailSession(user);
-    return finishLogin(user, role, redirectTo);
+    return finishLogin(user, redirectTo);
   } catch (err: any) {
     console.error('Login error:', err);
     return NextResponse.json({ success: false, error: err.message || 'Login failed' }, { status: 500 });

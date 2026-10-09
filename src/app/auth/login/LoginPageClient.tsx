@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Loader2, Store } from 'lucide-react';
+import { Loader2, Store, User, LogIn, PlusCircle } from 'lucide-react';
 import { Logo } from '@/components/Logo';
 
 interface LoginPageClientProps {
@@ -11,8 +11,12 @@ interface LoginPageClientProps {
   intent: 'business' | 'customer';
 }
 
+type Role = 'customer' | 'business';
+type AuthMode = 'signin' | 'signup';
+
 export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageClientProps) {
-  const isBusiness = intent === 'business';
+  const [role, setRole] = useState<Role>(intent === 'customer' ? 'customer' : 'business');
+  const [authMode, setAuthMode] = useState<AuthMode>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,11 +24,19 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(errorMessage || null);
 
+  const isBusiness = role === 'business';
   const googleNext = isBusiness ? '/dashboard/business/new' : redirectTo || '/customer/dashboard';
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !fullName.trim()) return;
+    if (!email.trim()) {
+      setError('Enter your email.');
+      return;
+    }
+    if (authMode === 'signup' && !fullName.trim()) {
+      setError('Enter your name to create an account.');
+      return;
+    }
     if (mode === 'password' && password.length < 8) {
       setError('Password must be at least 8 characters.');
       return;
@@ -41,6 +53,7 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
           full_name: fullName.trim(),
           password: mode === 'password' ? password : '',
           mode,
+          authMode,
           role: isBusiness ? 'BUSINESS_OWNER' : 'CUSTOMER',
           redirectTo: isBusiness ? '' : redirectTo,
         }),
@@ -58,6 +71,8 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
       setLoading(false);
     }
   }
+
+  const submitLabel = authMode === 'signin' ? 'Sign in' : isBusiness ? 'Create my shop' : 'Create my card';
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
@@ -84,17 +99,79 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
             <div className="lg:hidden mb-4">
               <Logo />
             </div>
-            <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-leaf">
-              <Store className="w-3.5 h-3.5" />
-              {isBusiness ? 'Start your shop' : 'Customer sign in'}
-            </p>
-            <h2 className="font-display text-4xl text-ink tracking-tight">
-              {isBusiness ? 'Open your loyalty card' : 'Open your card'}
+
+            {/* Account: sign in vs create */}
+            <div className="grid grid-cols-2 gap-1 p-1 rounded-2xl bg-sand/60 border border-sand">
+              <button
+                type="button"
+                onClick={() => setAuthMode('signin')}
+                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                  authMode === 'signin' ? 'bg-white text-ink shadow-sm' : 'text-ink/50 hover:text-ink'
+                }`}
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('signup')}
+                className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition ${
+                  authMode === 'signup' ? 'bg-white text-ink shadow-sm' : 'text-ink/50 hover:text-ink'
+                }`}
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                Create account
+              </button>
+            </div>
+
+            {/* Role: customer vs shop keeper */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setRole('customer')}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-left transition ${
+                  role === 'customer'
+                    ? 'border-leaf bg-lime/50 ring-2 ring-leaf/40'
+                    : 'border-sand bg-white hover:border-ink/20'
+                }`}
+              >
+                <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4" />
+                </span>
+                <span>
+                  <span className="block text-xs font-bold text-ink">I&apos;m a customer</span>
+                  <span className="block text-[10px] text-ink/45">Collect stamps &amp; rewards</span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRole('business')}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-2xl border text-left transition ${
+                  role === 'business'
+                    ? 'border-leaf bg-lime/50 ring-2 ring-leaf/40'
+                    : 'border-sand bg-white hover:border-ink/20'
+                }`}
+              >
+                <span className="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+                  <Store className="w-4 h-4" />
+                </span>
+                <span>
+                  <span className="block text-xs font-bold text-ink">I&apos;m a shop keeper</span>
+                  <span className="block text-[10px] text-ink/45">Run a loyalty program</span>
+                </span>
+              </button>
+            </div>
+
+            <h2 className="font-display text-3xl text-ink tracking-tight pt-2">
+              {authMode === 'signin' ? 'Welcome back' : isBusiness ? 'Start your shop' : 'Open your card'}
             </h2>
             <p className="text-sm text-ink/55">
-              {isBusiness
-                ? 'Use your work email. You will set the shop name on the next screen.'
-                : 'Sign in with the email on your stamp card.'}
+              {authMode === 'signin'
+                ? 'Continue with Google or sign in with your email and password.'
+                : isBusiness
+                  ? 'Use your work email. You will set the shop name on the next screen.'
+                  : 'Sign up with the email on your stamp card.'}
             </p>
           </div>
 
@@ -129,17 +206,19 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
-            <label className="block">
-              <span className="text-xs font-semibold text-ink/70">Your name</span>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder={isBusiness ? 'Asha Mehta' : 'Alex Rivera'}
-                className="mt-1 w-full text-sm px-3.5 py-3 border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-leaf"
-              />
-            </label>
+            {authMode === 'signup' && (
+              <label className="block">
+                <span className="text-xs font-semibold text-ink/70">Your name</span>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder={isBusiness ? 'Asha Mehta' : 'Alex Rivera'}
+                  className="mt-1 w-full text-sm px-3.5 py-3 border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-leaf"
+                />
+              </label>
+            )}
+
             <label className="block">
               <span className="text-xs font-semibold text-ink/70">Email</span>
               <input
@@ -154,37 +233,34 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
 
             {mode === 'password' ? (
               <label className="block">
-                <span className="text-xs font-semibold text-ink/70">
-                  Password {isBusiness ? '(create &amp; confirm — at least 8 characters)' : '(at least 8 characters)'}
-                </span>
+                <span className="text-xs font-semibold text-ink/70">Password</span>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="At least 8 characters"
                   className="mt-1 w-full text-sm px-3.5 py-3 border border-sand rounded-2xl focus:outline-none focus:ring-2 focus:ring-leaf"
                 />
                 <span className="mt-1 block text-[11px] text-ink/45">
-                  {isBusiness
-                    ? 'New shop owners: this password becomes the login for your account. Returning owners: enter the password you set.'
-                    : 'First time here? This password creates your account. Returning? Sign in with the password you set.'}
+                  {authMode === 'signup'
+                    ? 'This password is for your account. Keep it somewhere safe.'
+                    : 'Use the password you set for this account.'}
                 </span>
               </label>
             ) : (
               <p className="text-[11px] text-ink/45 rounded-2xl bg-white border border-sand px-3.5 py-3">
-                You'll continue instantly with just your email — no password needed. Existing members can set a
-                password later in their settings.
+                You&apos;ll continue instantly with just your email — no password needed.
               </p>
             )}
 
             <button
               type="submit"
-              disabled={loading || !email.trim() || !fullName.trim()}
+              disabled={loading || !email.trim() || (authMode === 'signup' && !fullName.trim())}
               className="w-full py-3.5 bg-ink hover:bg-leaf text-white text-sm font-semibold rounded-full transition flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {isBusiness ? 'Create my shop' : 'Open my card'}
+              {submitLabel}
             </button>
 
             <button
@@ -193,28 +269,12 @@ export function LoginPageClient({ redirectTo, errorMessage, intent }: LoginPageC
               className="w-full text-xs font-semibold text-leaf hover:underline"
             >
               {mode === 'password'
-                ? "Forgot your password? Use a sign-in link instead"
-                : 'Sign in with a password instead'}
+                ? authMode === 'signin'
+                  ? 'Forgot your password? Use a sign-in link instead'
+                  : 'Or continue with just your email (no password)'
+                : 'Use a password instead'}
             </button>
           </form>
-
-          <p className="text-sm text-ink/55">
-            {isBusiness ? (
-              <>
-                Already collect stamps at a shop?{' '}
-                <Link href="/auth/login?intent=customer" className="font-semibold text-leaf hover:underline">
-                  Open your card
-                </Link>
-              </>
-            ) : (
-              <>
-                Run the business?{' '}
-                <Link href="/auth/login?intent=business" className="font-semibold text-leaf hover:underline">
-                  Start your shop
-                </Link>
-              </>
-            )}
-          </p>
         </div>
       </div>
     </div>
