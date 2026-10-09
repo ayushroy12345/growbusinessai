@@ -16,6 +16,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { computeRewardStatus } from '@/lib/loyalty';
+import { QrScanner } from '@/components/QrScanner';
+import { Camera } from 'lucide-react';
 
 interface CustomerDashboardProps {
   searchParams: Promise<{ saved?: string; error?: string }>;
@@ -94,6 +96,19 @@ export default async function CustomerDashboardPage({ searchParams }: CustomerDa
             <div className="text-2xl font-black text-white">{participating.length}</div>
           </div>
         </div>
+
+        <div className="flex items-center gap-3 mt-6 bg-white/10 backdrop-blur border border-white/15 rounded-2xl px-4 py-3">
+          <div className="w-10 h-10 rounded-xl bg-white text-indigo-700 flex items-center justify-center shrink-0">
+            <Camera className="w-5 h-5" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-bold text-white">Check in at a new store</div>
+            <div className="text-[11px] text-indigo-200">
+              Scan the shop&apos;s QR code with your camera to jump to it and collect your visit.
+            </div>
+          </div>
+          <QrScanner label="Scan QR" className="bg-white text-indigo-800 hover:bg-indigo-50 shrink-0" />
+        </div>
       </div>
 
       {/* Active Unredeemed Claimed Rewards */}
@@ -163,6 +178,9 @@ export default async function CustomerDashboardPage({ searchParams }: CustomerDa
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
               Scan the QR code at your favorite local store or cafe to start collecting loyalty visits and unlocking rewards.
             </p>
+            <div className="pt-2 flex justify-center">
+              <QrScanner label="Scan the QR at the store" />
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
